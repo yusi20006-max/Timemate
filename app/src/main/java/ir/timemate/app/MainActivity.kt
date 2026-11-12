@@ -38,17 +38,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ir.timemate.app.alarm.AlarmScheduler
+import ir.timemate.app.alarm.HourlyChimeSynthesizer
 import ir.timemate.app.data.model.AlarmEntity
-import ir.timemate.app.data.model.HabitEntity
 import ir.timemate.app.data.model.ReminderEntity
 import ir.timemate.app.ui.TimeMateViewModel
 import ir.timemate.app.ui.theme.*
-import ir.timemate.app.util.JalaliDate
-import ir.timemate.app.util.PersianCalendarUtils
-import ir.timemate.app.util.XiaomiPermissionHelper
-import ir.timemate.app.util.toPersianDigits
+import ir.timemate.app.util.*
+import ir.timemate.app.widget.BaseMinimalWidgetProvider
 import kotlinx.coroutines.delay
 import java.util.Calendar
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -57,6 +57,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BaseMinimalWidgetProvider.updateAllWidgets(this)
+        if (HourlyChimeSynthesizer.isHourlyChimeEnabled(this)) {
+            AlarmScheduler.scheduleNextHourlyChime(this)
+        }
         setContent {
             TimeMateTheme {
                 RequestNotificationPermissionIfNeeded()
@@ -83,7 +87,6 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
-    val habits by viewModel.habits.collectAsState()
 
     Box(
         modifier = Modifier
@@ -118,8 +121,9 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
                     0 -> HomeScreen(alarms, reminders, viewModel)
                     1 -> AlarmsScreen(alarms, viewModel)
                     2 -> RemindersScreen(reminders, viewModel)
-                    3 -> HabitsReportScreen(habits, reminders, viewModel)
-                    4 -> SettingsScreen(viewModel)
+                    3 -> DateConverterScreen()
+                    4 -> WidgetsGalleryScreen()
+                    5 -> SettingsScreen(viewModel)
                 }
             }
         }
@@ -132,17 +136,18 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
         Triple("خانه", Icons.Default.Home, 0),
         Triple("بیدارباش", Icons.Default.Alarm, 1),
         Triple("یادآورها", Icons.Default.NotificationsActive, 2),
-        Triple("گزارش‌ها", Icons.Default.Insights, 3),
-        Triple("تنظیمات", Icons.Default.Settings, 4)
+        Triple("مبدل تاریخ", Icons.Default.SwapHoriz, 3),
+        Triple("ویجت‌ها", Icons.Default.Widgets, 4),
+        Triple("تنظیمات", Icons.Default.Settings, 5)
     )
 
     NavigationBar(
-        containerColor = MidnightBlue.copy(alpha = 0.88f),
+        containerColor = MidnightBlue.copy(alpha = 0.92f),
         tonalElevation = 0.dp,
         modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(26.dp))
-            .border(1.dp, GlassBorder, RoundedCornerShape(26.dp))
+            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp))
     ) {
         items.forEach { (label, icon, index) ->
             val isSelected = selectedTab == index
@@ -159,7 +164,8 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
                 label = {
                     Text(
                         text = label,
-                        fontSize = 11.sp,
+                        fontSize = 10.sp,
+                        maxLines = 1,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         color = if (isSelected) IceWhite else CoolSilver
                     )
@@ -173,7 +179,7 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
 }
 
 // ==========================================
-// 1. HOME SCREEN (Digital/Analog Clock + Shamsi Calendar + Today's Tasks + Overdue)
+// 1. HOME SCREEN (Clock + Shamsi Calendar with Holidays & Occasions + Hourly Ding-Ding Quick Toggle)
 // ==========================================
 @Composable
 fun HomeScreen(
@@ -181,6 +187,7 @@ fun HomeScreen(
     reminders: List<ReminderEntity>,
     viewModel: TimeMateViewModel
 ) {
+    val context = LocalContext.current
     var currentTime by remember { mutableStateOf(Calendar.getInstance()) }
     var isAnalogClock by remember { mutableStateOf(false) }
 
@@ -194,11 +201,25 @@ fun HomeScreen(
     val jalaliToday = remember(currentTime.get(Calendar.DAY_OF_YEAR)) {
         PersianCalendarUtils.today()
     }
+    var viewedMonth by remember { mutableIntStateOf(jalaliToday.month) }
+    var viewedYear by remember { mutableIntStateOf(jalaliToday.year) }
+    var selectedDay by remember { mutableIntStateOf(jalaliToday.day) }
+
+    var isChimeEnabled by remember {
+        mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
+    }
+
     val todayNumeric = jalaliToday.formatNumeric()
     val nowMillis = currentTime.timeInMillis
-
     val todayTasks = reminders.filter { it.persianDate == todayNumeric && !it.isCompleted }
     val overdueTasks = reminders.filter { !it.isCompleted && it.targetTimeMillis < nowMillis }
+
+    val selectedDayOccasions = remember(viewedMonth, selectedDay) {
+        PersianCalendarUtils.getOccasionsForDay(viewedMonth, selectedDay)
+    }
+    val monthOccasions = remember(viewedMonth) {
+        PersianCalendarUtils.getOccasionsForMonth(viewedMonth)
+    }
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -234,7 +255,7 @@ fun HomeScreen(
             }
         }
 
-        // Live Glass Clock Card
+        // Live Clock Card
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -257,42 +278,134 @@ fun HomeScreen(
                             color = IceWhite
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
-                    val enabledCount = alarms.count { it.isEnabled }
+                    Spacer(Modifier.height(6.dp))
+                    val gToday = PersianCalendarUtils.jalaliToGregorian(jalaliToday.year, jalaliToday.month, jalaliToday.day)
+                    val hToday = PersianCalendarUtils.gregorianToHijri(gToday.year, gToday.month, gToday.day)
                     Text(
-                        text = if (enabledCount > 0)
-                            "${toPersianDigits(enabledCount)} زنگ بیدارباش فعال است"
-                        else
-                            "هیچ زنگ فعالی تنظیم نشده است",
-                        fontSize = 13.sp,
+                        text = "میلادی: ${gToday.formatNumeric()}  |  قمری: ${hToday.formatFull()}",
+                        fontSize = 12.sp,
                         color = CoolSilver
                     )
                 }
             }
         }
 
-        // Persian Month Mini-Grid
+        // Quick Hourly "Ding-Ding" Chime Card (7 AM to 11 PM)
+        item {
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                borderColor = if (isChimeEnabled) NeonViolet.copy(alpha = 0.6f) else GlassBorder
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "زنگ ساعتی «دینگ‌دینگ» (۷ صبح تا ۱۱ شب)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = IceWhite
+                        )
+                        Text(
+                            text = "پخش زنگ کوتاه دو جزئی رأس هر ساعت",
+                            fontSize = 12.sp,
+                            color = CoolSilver
+                        )
+                    }
+                    TextButton(onClick = { HourlyChimeSynthesizer.playDingDing() }) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = SoftPurple, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("تست صدا", color = SoftPurple, fontSize = 12.sp)
+                    }
+                    Switch(
+                        checked = isChimeEnabled,
+                        onCheckedChange = {
+                            isChimeEnabled = it
+                            HourlyChimeSynthesizer.setHourlyChimeEnabled(context, it)
+                        }
+                    )
+                }
+            }
+        }
+
+        // Full Interactive Shamsi Calendar with Holidays & Occasions
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column {
-                    Text(
-                        text = "تقویم شمسی — ${jalaliToday.monthName} ${toPersianDigits(jalaliToday.year)}",
-                        fontWeight = FontWeight.Bold,
-                        color = IceWhite,
-                        fontSize = 15.sp
-                    )
-                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = {
+                            if (viewedMonth == 1) {
+                                viewedMonth = 12
+                                viewedYear -= 1
+                            } else {
+                                viewedMonth -= 1
+                            }
+                            selectedDay = 1
+                        }) {
+                            Icon(Icons.Default.ChevronRight, contentDescription = "ماه قبل", tint = IceWhite)
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "${JalaliDate.MONTH_NAMES[viewedMonth - 1]} ${toPersianDigits(viewedYear)}",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = IceWhite,
+                                fontSize = 17.sp
+                            )
+                            if (viewedMonth != jalaliToday.month || viewedYear != jalaliToday.year) {
+                                Text(
+                                    text = "بازگشت به امروز",
+                                    color = NeonViolet,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.clickable {
+                                        viewedMonth = jalaliToday.month
+                                        viewedYear = jalaliToday.year
+                                        selectedDay = jalaliToday.day
+                                    }
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = {
+                            if (viewedMonth == 12) {
+                                viewedMonth = 1
+                                viewedYear += 1
+                            } else {
+                                viewedMonth += 1
+                            }
+                            selectedDay = 1
+                        }) {
+                            Icon(Icons.Default.ChevronLeft, contentDescription = "ماه بعد", tint = IceWhite)
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        JalaliDate.DAY_SHORT_NAMES.forEach { d ->
-                            Text(text = d, color = SoftPurple, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        JalaliDate.DAY_SHORT_NAMES.forEachIndexed { idx, d ->
+                            Text(
+                                text = d,
+                                color = if (idx == 6) UrgentRed else SoftPurple,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    val daysInMonth = PersianCalendarUtils.getDaysInJalaliMonth(jalaliToday.year, jalaliToday.month)
-                    val rows = (1..daysInMonth).chunked(7)
+
+                    val daysInMonth = PersianCalendarUtils.getDaysInJalaliMonth(viewedYear, viewedMonth)
+                    val startOffset = PersianCalendarUtils.getFirstDayOfWeekInMonth(viewedYear, viewedMonth)
+                    val cells = List(startOffset) { null } + (1..daysInMonth).toList()
+                    val rows = cells.chunked(7)
+
                     rows.forEach { week ->
                         Row(
                             modifier = Modifier
@@ -300,31 +413,96 @@ fun HomeScreen(
                                 .padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceAround
                         ) {
-                            for (i in 0 until 7) {
-                                val dayNum = week.getOrNull(i)
-                                val isToday = dayNum == jalaliToday.day
+                            for (col in 0 until 7) {
+                                val dayNum = week.getOrNull(col)
+                                val isToday = dayNum == jalaliToday.day &&
+                                        viewedMonth == jalaliToday.month &&
+                                        viewedYear == jalaliToday.year
+                                val isSelected = dayNum == selectedDay
+                                val isHoliday = if (dayNum != null) {
+                                    PersianCalendarUtils.isOfficialHoliday(viewedMonth, dayNum, col)
+                                } else false
+
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(34.dp)
                                         .clip(CircleShape)
-                                        .background(if (isToday) NeonViolet else Color.Transparent),
+                                        .background(
+                                            when {
+                                                isToday -> NeonViolet
+                                                isSelected -> RoyalAzure.copy(alpha = 0.45f)
+                                                else -> Color.Transparent
+                                            }
+                                        )
+                                        .clickable(enabled = dayNum != null) {
+                                            if (dayNum != null) selectedDay = dayNum
+                                        },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = if (dayNum != null) toPersianDigits(dayNum) else "",
-                                        color = if (isToday) IceWhite else CoolSilver,
+                                        color = when {
+                                            isToday -> IceWhite
+                                            isHoliday -> UrgentRed
+                                            else -> IceWhite
+                                        },
                                         fontSize = 13.sp,
-                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                                        fontWeight = if (isToday || isHoliday || isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    Divider(color = GlassBorder)
+                    Spacer(Modifier.height(8.dp))
+
+                    // Occasions of Selected Day
+                    Text(
+                        text = "مناسبت‌های ${toPersianDigits(selectedDay)} ${JalaliDate.MONTH_NAMES[viewedMonth - 1]}:",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = SoftPurple
+                    )
+                    if (selectedDayOccasions.isEmpty()) {
+                        Text(
+                            text = "مناسبت ثبت‌شده‌ای برای این روز وجود ندارد.",
+                            fontSize = 12.sp,
+                            color = CoolSilver
+                        )
+                    } else {
+                        selectedDayOccasions.forEach { occ ->
+                            Text(
+                                text = "• ${occ.title}" + if (occ.isHoliday) " (تعطیل رسمی)" else "",
+                                fontSize = 13.sp,
+                                fontWeight = if (occ.isHoliday) FontWeight.Bold else FontWeight.Normal,
+                                color = if (occ.isHoliday) UrgentRed else IceWhite
+                            )
+                        }
+                    }
+
+                    if (monthOccasions.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "مهم‌ترین مناسبت‌ها و تعطیلات این ماه:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = CoolSilver
+                        )
+                        monthOccasions.forEach { occ ->
+                            Text(
+                                text = "${toPersianDigits(occ.day)} ${JalaliDate.MONTH_NAMES[viewedMonth - 1]}: ${occ.title}" +
+                                        if (occ.isHoliday) " [تعطیل]" else "",
+                                fontSize = 11.sp,
+                                color = if (occ.isHoliday) UrgentRed else CoolSilver
+                            )
                         }
                     }
                 }
             }
         }
 
-        // Overdue Tasks Section
         if (overdueTasks.isNotEmpty()) {
             item {
                 Text(
@@ -339,7 +517,6 @@ fun HomeScreen(
             }
         }
 
-        // Today's Schedule Section
         item {
             Text(
                 text = "برنامه‌های امروز (${toPersianDigits(todayTasks.size)})",
@@ -352,7 +529,7 @@ fun HomeScreen(
             item {
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "برنامه باز برای امروز ثبت نشده است. از تب یادآورها برنامه جدیدی اضافه کنید.",
+                        text = "برنامه باز برای امروز ثبت نشده است.",
                         color = CoolSilver,
                         fontSize = 13.sp
                     )
@@ -362,6 +539,468 @@ fun HomeScreen(
             items(todayTasks) { item ->
                 ReminderItemCard(item, onToggle = { viewModel.toggleReminderDone(item) }, onDelete = { viewModel.deleteReminder(item) })
             }
+        }
+    }
+}
+
+// ==========================================
+// DATE CONVERTER & DAY DIFFERENCE SCREEN (Shamsi <-> Gregorian <-> Hijri)
+// ==========================================
+@Composable
+fun DateConverterScreen() {
+    val today = remember { PersianCalendarUtils.today() }
+    var mode by remember { mutableIntStateOf(0) } // 0 = Shamsi to Gregorian/Hijri, 1 = Gregorian to Shamsi/Hijri
+
+    var jYear by remember { mutableIntStateOf(today.year) }
+    var jMonth by remember { mutableIntStateOf(today.month) }
+    var jDay by remember { mutableIntStateOf(today.day) }
+
+    val gNow = remember { Calendar.getInstance() }
+    var gYear by remember { mutableIntStateOf(gNow.get(Calendar.YEAR)) }
+    var gMonth by remember { mutableIntStateOf(gNow.get(Calendar.MONTH) + 1) }
+    var gDay by remember { mutableIntStateOf(gNow.get(Calendar.DAY_OF_MONTH)) }
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(vertical = 16.dp)
+    ) {
+        item {
+            Text(
+                text = "مبدل تاریخ و محاسبه‌گر زمان",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = IceWhite
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "تبدیل دقیق آفلاین بین تقویم خورشیدی (شمسی)، میلادی و قمری به همراه محاسبه فاصله زمانی و سن",
+                fontSize = 13.sp,
+                color = CoolSilver
+            )
+        }
+
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FilterChip(
+                    selected = mode == 0,
+                    onClick = { mode = 0 },
+                    label = { Text("شمسی به میلادی و قمری") }
+                )
+                FilterChip(
+                    selected = mode == 1,
+                    onClick = { mode = 1 },
+                    label = { Text("میلادی به شمسی و قمری") }
+                )
+            }
+        }
+
+        if (mode == 0) {
+            item {
+                val maxDay = PersianCalendarUtils.getDaysInJalaliMonth(jYear, jMonth)
+                if (jDay > maxDay) jDay = maxDay
+
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("انتخاب تاریخ شمسی:", fontWeight = FontWeight.Bold, color = SoftPurple)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            DateNumberStepper(
+                                label = "روز",
+                                value = jDay,
+                                display = toPersianDigits(jDay),
+                                onInc = { jDay = if (jDay >= maxDay) 1 else jDay + 1 },
+                                onDec = { jDay = if (jDay <= 1) maxDay else jDay - 1 }
+                            )
+                            DateNumberStepper(
+                                label = "ماه",
+                                value = jMonth,
+                                display = JalaliDate.MONTH_NAMES[jMonth - 1],
+                                onInc = { jMonth = if (jMonth >= 12) 1 else jMonth + 1 },
+                                onDec = { jMonth = if (jMonth <= 1) 12 else jMonth - 1 }
+                            )
+                            DateNumberStepper(
+                                label = "سال",
+                                value = jYear,
+                                display = toPersianDigits(jYear),
+                                onInc = { jYear += 1 },
+                                onDec = { jYear = (jYear - 1).coerceAtLeast(1200) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                val gOut = PersianCalendarUtils.jalaliToGregorian(jYear, jMonth, jDay)
+                val jOut = PersianCalendarUtils.gregorianToJalali(gOut.year, gOut.month, gOut.day)
+                val hOut = PersianCalendarUtils.gregorianToHijri(gOut.year, gOut.month, gOut.day)
+                val diffDays = PersianCalendarUtils.daysBetweenTodayAnd(jYear, jMonth, jDay)
+                val occasions = PersianCalendarUtils.getOccasionsForDay(jMonth, jDay)
+
+                ConverterResultCard(
+                    jalali = jOut,
+                    gregorian = gOut,
+                    hijri = hOut,
+                    diffDays = diffDays,
+                    occasions = occasions
+                )
+            }
+        } else {
+            item {
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("انتخاب تاریخ میلادی:", fontWeight = FontWeight.Bold, color = SoftPurple)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            DateNumberStepper(
+                                label = "Day",
+                                value = gDay,
+                                display = gDay.toString(),
+                                onInc = { gDay = if (gDay >= 31) 1 else gDay + 1 },
+                                onDec = { gDay = if (gDay <= 1) 31 else gDay - 1 }
+                            )
+                            DateNumberStepper(
+                                label = "Month",
+                                value = gMonth,
+                                display = JalaliDate.GREGORIAN_MONTH_NAMES[gMonth - 1],
+                                onInc = { gMonth = if (gMonth >= 12) 1 else gMonth + 1 },
+                                onDec = { gMonth = if (gMonth <= 1) 12 else gMonth - 1 }
+                            )
+                            DateNumberStepper(
+                                label = "Year",
+                                value = gYear,
+                                display = gYear.toString(),
+                                onInc = { gYear += 1 },
+                                onDec = { gYear = (gYear - 1).coerceAtLeast(1900) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                val jOut = PersianCalendarUtils.gregorianToJalali(gYear, gMonth, gDay)
+                val gOut = GregorianDate(gYear, gMonth, gDay)
+                val hOut = PersianCalendarUtils.gregorianToHijri(gYear, gMonth, gDay)
+                val diffDays = PersianCalendarUtils.daysBetweenTodayAnd(jOut.year, jOut.month, jOut.day)
+                val occasions = PersianCalendarUtils.getOccasionsForDay(jOut.month, jOut.day)
+
+                ConverterResultCard(
+                    jalali = jOut,
+                    gregorian = gOut,
+                    hijri = hOut,
+                    diffDays = diffDays,
+                    occasions = occasions
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DateNumberStepper(
+    label: String,
+    value: Int,
+    display: String,
+    onInc: () -> Unit,
+    onDec: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, fontSize = 11.sp, color = CoolSilver)
+        IconButton(onClick = onInc) {
+            Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = IceWhite)
+        }
+        Text(display, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+        IconButton(onClick = onDec) {
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = IceWhite)
+        }
+    }
+}
+
+@Composable
+fun ConverterResultCard(
+    jalali: JalaliDate,
+    gregorian: GregorianDate,
+    hijri: HijriDate,
+    diffDays: Long,
+    occasions: List<PersianOccasion>
+) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        borderColor = NeonViolet.copy(alpha = 0.6f)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                text = "نتیجه تبدیل تاریخ",
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 17.sp,
+                color = IceWhite
+            )
+            Divider(color = GlassBorder)
+
+            Text(
+                text = "خورشیدی (شمسی): ${jalali.formatFull()} (${toPersianDigits(jalali.formatNumeric())})",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = IceWhite
+            )
+            Text(
+                text = "میلادی: ${gregorian.day} ${gregorian.monthName} ${gregorian.year} (${gregorian.formatNumeric()})",
+                fontSize = 14.sp,
+                color = SoftPurple
+            )
+            Text(
+                text = "قمری: ${hijri.formatFull()}",
+                fontSize = 14.sp,
+                color = Color(0xFF60A5FA)
+            )
+            Text(
+                text = "برج فلکی: ${JalaliDate.ZODIAC_NAMES.getOrElse(jalali.month - 1) { "" }}",
+                fontSize = 13.sp,
+                color = CoolSilver
+            )
+
+            val diffText = when {
+                diffDays == 0L -> "این تاریخ دقیقاً امروز است."
+                diffDays > 0L -> "${toPersianDigits(diffDays)} روز مانده تا این تاریخ"
+                else -> {
+                    val pastDays = abs(diffDays)
+                    val years = pastDays / 365
+                    val remDays = pastDays % 365
+                    "${toPersianDigits(pastDays)} روز از این تاریخ گذشته است (معادل حدود ${toPersianDigits(years)} سال و ${toPersianDigits(remDays)} روز)"
+                }
+            }
+            Text(
+                text = "فاصله زمانی: $diffText",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = EmeraldSuccess
+            )
+
+            if (occasions.isNotEmpty()) {
+                Divider(color = GlassBorder)
+                Text("مناسبت این روز:", fontSize = 12.sp, color = SoftPurple, fontWeight = FontWeight.Bold)
+                occasions.forEach { occ ->
+                    Text(
+                        text = "• ${occ.title}" + if (occ.isHoliday) " (تعطیل رسمی)" else "",
+                        fontSize = 13.sp,
+                        color = if (occ.isHoliday) UrgentRed else IceWhite
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ==========================================
+// WIDGETS GALLERY SCREEN (All 4 Flat 2D Minimal Persian Widgets)
+// ==========================================
+@Composable
+fun WidgetsGalleryScreen() {
+    val context = LocalContext.current
+    var currentTime by remember { mutableStateOf(Calendar.getInstance()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = Calendar.getInstance()
+            delay(1000L)
+        }
+    }
+
+    val today = remember(currentTime.get(Calendar.DAY_OF_YEAR)) { PersianCalendarUtils.today() }
+    val clockStr = toPersianDigits(
+        "%02d:%02d".format(
+            currentTime.get(Calendar.HOUR_OF_DAY),
+            currentTime.get(Calendar.MINUTE)
+        )
+    )
+    val dayMonthStr = "${toPersianDigits(today.day)} ${today.monthName}"
+    val yearStr = toPersianDigits(today.year)
+    val weekdayStr = today.dayOfWeekName
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp)
+    ) {
+        item {
+            Text(
+                text = "ویجت‌های مینیمال و تخت (۲ بعدی)",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = IceWhite
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "هر ۴ مدل ویجت ساعت و تقویم شمسی فعال هستند. با زدن دکمه «افزودن به صفحه اصلی»، ویجت مستقیماً روی هوم‌اسکرین گوشی قرار می‌گیرد.",
+                fontSize = 13.sp,
+                color = CoolSilver
+            )
+        }
+
+        item {
+            WidgetPreviewContainer(
+                title = "ویجت ۱ — افقی استاندارد",
+                onAddClick = { BaseMinimalWidgetProvider.requestPinWidget(context, 1) }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(115.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .padding(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(NeonViolet.copy(alpha = 0.25f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(yearStr, fontSize = 11.sp, color = IceWhite)
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(top = 12.dp),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Text(dayMonthStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                        Text(weekdayStr, fontSize = 14.sp, color = SoftPurple)
+                    }
+
+                    Text(
+                        text = clockStr,
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = IceWhite,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                }
+            }
+        }
+
+        item {
+            WidgetPreviewContainer(
+                title = "ویجت ۲ — بزرگ و خوانا",
+                onAddClick = { BaseMinimalWidgetProvider.requestPinWidget(context, 2) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .padding(18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(dayMonthStr, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = IceWhite)
+                        Text(weekdayStr, fontSize = 16.sp, color = CoolSilver)
+                    }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(yearStr, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF60A5FA))
+                        Text(clockStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                    }
+                }
+            }
+        }
+
+        item {
+            WidgetPreviewContainer(
+                title = "ویجت ۳ — مربعی جمع‌وجور",
+                onAddClick = { BaseMinimalWidgetProvider.requestPinWidget(context, 3) }
+            ) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Column(
+                        modifier = Modifier
+                            .size(165.dp)
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                            .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                            .padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(weekdayStr, fontSize = 16.sp, color = CoolSilver)
+                        Spacer(Modifier.height(6.dp))
+                        Text("$dayMonthStr $yearStr", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                        Spacer(Modifier.height(6.dp))
+                        Text(clockStr, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SoftPurple)
+                    }
+                }
+            }
+        }
+
+        item {
+            WidgetPreviewContainer(
+                title = "ویجت ۴ — نواری کشیده و فوق‌مینیمال",
+                onAddClick = { BaseMinimalWidgetProvider.requestPinWidget(context, 4) }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(68.dp)
+                        .clip(RoundedCornerShape(22.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .padding(horizontal = 18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = clockStr,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = IceWhite
+                    )
+                    Text(
+                        text = "$weekdayStr، $dayMonthStr $yearStr",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CoolSilver
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WidgetPreviewContainer(
+    title: String,
+    onAddClick: () -> Unit,
+    previewContent: @Composable () -> Unit
+) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(title, fontWeight = FontWeight.Bold, color = IceWhite, fontSize = 15.sp)
+                Button(
+                    onClick = onAddClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(Icons.Default.AddToHomeScreen, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("افزودن به صفحه اصلی", fontSize = 12.sp)
+                }
+            }
+            previewContent()
         }
     }
 }
@@ -388,7 +1027,6 @@ fun GlassAnalogClock(calendar: Calendar) {
             style = Stroke(width = 4f)
         )
 
-        // Hour hand
         val hourAngle = Math.toRadians(((hour + minute / 60.0) * 30.0) - 90.0)
         drawLine(
             color = IceWhite,
@@ -401,7 +1039,6 @@ fun GlassAnalogClock(calendar: Calendar) {
             cap = StrokeCap.Round
         )
 
-        // Minute hand
         val minAngle = Math.toRadians((minute * 6.0) - 90.0)
         drawLine(
             color = SoftPurple,
@@ -414,7 +1051,6 @@ fun GlassAnalogClock(calendar: Calendar) {
             cap = StrokeCap.Round
         )
 
-        // Second hand
         val secAngle = Math.toRadians((second * 6.0) - 90.0)
         drawLine(
             color = RoyalAzure,
@@ -430,7 +1066,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 }
 
 // ==========================================
-// 2. ALARMS SCREEN (Multiple Alarms, Days of Week, Gradual Volume, Vibrate)
+// 2. ALARMS SCREEN
 // ==========================================
 @Composable
 fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
@@ -640,7 +1276,7 @@ fun AddAlarmDialog(
 }
 
 // ==========================================
-// 3. REMINDERS SCREEN (Smart Reminders with Priority & Auto-Repeat)
+// 3. REMINDERS SCREEN
 // ==========================================
 @Composable
 fun RemindersScreen(reminders: List<ReminderEntity>, viewModel: TimeMateViewModel) {
@@ -846,125 +1482,16 @@ fun AddReminderDialog(
 }
 
 // ==========================================
-// 4. HABITS & REPORTS SCREEN
-// ==========================================
-@Composable
-fun HabitsReportScreen(
-    habits: List<HabitEntity>,
-    reminders: List<ReminderEntity>,
-    viewModel: TimeMateViewModel
-) {
-    var newHabitTitle by remember { mutableStateOf("") }
-    val todayNumeric = PersianCalendarUtils.today().formatNumeric()
-    val completedTasks = reminders.count { it.isCompleted }
-    val totalTasks = reminders.size
-
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
-    ) {
-        item {
-            Text(
-                text = "گزارش عملکرد و پیگیری عادت‌ها",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = IceWhite
-            )
-        }
-
-        item {
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(toPersianDigits(completedTasks), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = EmeraldSuccess)
-                        Text("کارهای انجام‌شده", fontSize = 12.sp, color = CoolSilver)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(toPersianDigits(totalTasks - completedTasks), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = NeonViolet)
-                        Text("کارهای باقی‌مانده", fontSize = 12.sp, color = CoolSilver)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(toPersianDigits(habits.size), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = RoyalAzure)
-                        Text("عادت‌های فعال", fontSize = 12.sp, color = CoolSilver)
-                    }
-                }
-            }
-        }
-
-        item {
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = newHabitTitle,
-                        onValueChange = { newHabitTitle = it },
-                        label = { Text("عادت روزانه جدید (مثلاً مطالعه، ورزش)") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            viewModel.addHabit(newHabitTitle)
-                            newHabitTitle = ""
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonViolet)
-                    ) {
-                        Text("افزودن")
-                    }
-                }
-            }
-        }
-
-        items(habits, key = { it.id }) { habit ->
-            val doneToday = habit.lastCompletedPersianDate == todayNumeric
-            GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(habit.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = IceWhite)
-                        Text(
-                            text = "زنجیره فعلی: ${toPersianDigits(habit.currentStreak)} روز | رکورد: ${toPersianDigits(habit.bestStreak)} روز",
-                            fontSize = 12.sp,
-                            color = SoftPurple
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Button(
-                            onClick = { viewModel.checkInHabitToday(habit) },
-                            enabled = !doneToday,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (doneToday) EmeraldSuccess else RoyalAzure
-                            )
-                        ) {
-                            Text(if (doneToday) "امروز ثبت شد" else "ثبت امروز", fontSize = 12.sp)
-                        }
-                        IconButton(onClick = { viewModel.deleteHabit(habit) }) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = CoolSilver)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ==========================================
-// 5. SETTINGS & XIAOMI MIUI RELIABILITY GUARD
+// 5. SETTINGS & HOURLY CHIME + XIAOMI MIUI RELIABILITY GUARD
 // ==========================================
 @Composable
 fun SettingsScreen(viewModel: TimeMateViewModel) {
     val context = LocalContext.current
     val exactAlarmGranted = remember { XiaomiPermissionHelper.canScheduleExactAlarms(context) }
     val batteryIgnored = remember { XiaomiPermissionHelper.isIgnoringBatteryOptimizations(context) }
+    var isChimeEnabled by remember {
+        mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
+    }
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -979,7 +1506,52 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
             )
         }
 
-        // Redmi Note 12 / Xiaomi MIUI Special Card
+        // Hourly Ding-Ding Chime Configuration Card
+        item {
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                borderColor = RoyalAzure
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "زنگ کوتاه سر ساعت (دینگ‌دینگ)",
+                                fontWeight = FontWeight.Bold,
+                                color = IceWhite,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = "پخش خودکار زنگ دو جزئی رأس هر ساعت از ساعت ۷:۰۰ صبح تا ۲۳:۰۰ شب",
+                                fontSize = 12.sp,
+                                color = CoolSilver
+                            )
+                        }
+                        Switch(
+                            checked = isChimeEnabled,
+                            onCheckedChange = {
+                                isChimeEnabled = it
+                                HourlyChimeSynthesizer.setHourlyChimeEnabled(context, it)
+                            }
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { HourlyChimeSynthesizer.playDingDing() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = SoftPurple)
+                        Spacer(Modifier.width(8.dp))
+                        Text("پخش آزمایشی صدای دینگ‌دینگ", color = IceWhite)
+                    }
+                }
+            }
+        }
+
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -993,7 +1565,7 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
                         fontSize = 16.sp
                     )
                     Text(
-                        text = "برای اینکه زنگ ساعت حتی در زمان بسته بودن کامل برنامه یا خاموش و روشن شدن گوشی بدون خطا کار کند، این ۳ مجوز کلیدی را فعال کنید:",
+                        text = "برای اینکه زنگ ساعت و دینگ‌دینگ سر ساعت حتی در زمان بسته بودن کامل برنامه کار کند، این ۳ مجوز را فعال کنید:",
                         fontSize = 13.sp,
                         color = CoolSilver
                     )
@@ -1039,7 +1611,6 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
             }
         }
 
-        // Offline Backup Section
         item {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1048,11 +1619,6 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
                         fontWeight = FontWeight.Bold,
                         color = IceWhite,
                         fontSize = 16.sp
-                    )
-                    Text(
-                        text = "تمام زنگ‌ها، یادآورها و عادت‌ها کاملاً آفلاین در حافظه دستگاه ذخیره می‌شوند.",
-                        fontSize = 13.sp,
-                        color = CoolSilver
                     )
                     OutlinedButton(
                         onClick = {

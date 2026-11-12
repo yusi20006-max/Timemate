@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Critical Permissions for Reliable Alarm on Android 12/13/14 & Xiaomi MIUI/HyperOS -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -33,7 +32,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Full Screen Wake-Up Activity over Lock Screen -->
         <activity
             android:name=".alarm.AlarmRingActivity"
             android:exported="false"
@@ -42,20 +40,17 @@
             android:turnScreenOn="true"
             android:excludeFromRecents="true" />
 
-        <!-- High-Priority Foreground Service for Gradual Audio & Vibration -->
         <service
             android:name=".alarm.AlarmService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- Exact Alarm Trigger Receiver -->
         <receiver
             android:name=".alarm.AlarmReceiver"
             android:enabled="true"
             android:exported="false" />
 
-        <!-- Reboot & Time-Change Recovery Receiver -->
         <receiver
             android:name=".alarm.BootReceiver"
             android:enabled="true"
@@ -70,6 +65,67 @@
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
+        </receiver>
+
+        <!-- 4 Minimal Flat 2D Persian Calendar & Clock Widgets -->
+        <receiver
+            android:name=".widget.TimeMateWidget1Provider"
+            android:exported="true"
+            android:label="@string/widget_1_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_1" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimeMateWidget2Provider"
+            android:exported="true"
+            android:label="@string/widget_2_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_2" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimeMateWidget3Provider"
+            android:exported="true"
+            android:label="@string/widget_3_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_3" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimeMateWidget4Provider"
+            android:exported="true"
+            android:label="@string/widget_4_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_4" />
         </receiver>
 
     </application>

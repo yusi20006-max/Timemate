@@ -12,11 +12,24 @@ import ir.timemate.app.TimeMateApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
+            ACTION_HOURLY_CHIME -> {
+                if (HourlyChimeSynthesizer.isHourlyChimeEnabled(context)) {
+                    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                    val startHour = HourlyChimeSynthesizer.getStartHour(context)
+                    val endHour = HourlyChimeSynthesizer.getEndHour(context)
+                    if (currentHour in startHour..endHour) {
+                        HourlyChimeSynthesizer.playDingDing()
+                    }
+                    AlarmScheduler.scheduleNextHourlyChime(context)
+                }
+            }
+
             ACTION_TRIGGER_ALARM -> {
                 val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "بیدارباش TimeMate"
@@ -40,7 +53,6 @@ class AlarmReceiver : BroadcastReceiver() {
                     context.startService(serviceIntent)
                 }
 
-                // Reschedule if repeating alarm, or disable if one-time
                 if (alarmId != -1) {
                     val pendingResult = goAsync()
                     CoroutineScope(Dispatchers.IO).launch {
@@ -68,14 +80,13 @@ class AlarmReceiver : BroadcastReceiver() {
 
                 showReminderNotification(context, reminderId, title, desc)
 
-                // Handle auto-repeat if unfinished
                 val pendingResult = goAsync()
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = (context.applicationContext as TimeMateApp).database
                         val reminder = db.dao().getReminderById(reminderId)
                         if (reminder != null && !reminder.isCompleted && reminder.autoRepeatIfUnfinished) {
-                            val nextTime = System.currentTimeMillis() + (30 * 60 * 1000L) // Repeat in 30 mins if not done
+                            val nextTime = System.currentTimeMillis() + (30 * 60 * 1000L)
                             val updated = reminder.copy(targetTimeMillis = nextTime)
                             db.dao().updateReminder(updated)
                             AlarmScheduler.scheduleReminder(context, updated)
@@ -111,6 +122,7 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        const val ACTION_HOURLY_CHIME = "ir.timemate.app.ACTION_HOURLY_CHIME"
         const val ACTION_TRIGGER_ALARM = "ir.timemate.app.ACTION_TRIGGER_ALARM"
         const val ACTION_TRIGGER_REMINDER = "ir.timemate.app.ACTION_TRIGGER_REMINDER"
 

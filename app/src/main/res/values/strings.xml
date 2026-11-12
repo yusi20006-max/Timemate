@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TimeMate</string>
+    <string name="widget_1_name">TimeMate — ویجت ۱ (افقی استاندارد)</string>
+    <string name="widget_2_name">TimeMate — ویجت ۲ (بزرگ و خوانا)</string>
+    <string name="widget_3_name">TimeMate — ویجت ۳ (مربعی جمع‌وجور)</string>
+    <string name="widget_4_name">TimeMate — ویجت ۴ (نواری فوق‌مینیمال)</string>
+</resources>

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import ir.timemate.app.TimeMateApp
+import ir.timemate.app.widget.BaseMinimalWidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,6 +24,12 @@ class BootReceiver : BroadcastReceiver() {
                 activeReminders.forEach { reminder ->
                     AlarmScheduler.scheduleReminder(context, reminder)
                 }
+
+                if (HourlyChimeSynthesizer.isHourlyChimeEnabled(context)) {
+                    AlarmScheduler.scheduleNextHourlyChime(context)
+                }
+
+                BaseMinimalWidgetProvider.updateAllWidgets(context)
             } finally {
                 pendingResult.finish()
             }
