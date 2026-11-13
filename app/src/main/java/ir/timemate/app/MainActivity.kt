@@ -124,7 +124,7 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                     colors = listOf(
                         MaterialTheme.colorScheme.background,
                         MaterialTheme.colorScheme.surface,
-                        Color(0xFF140F2D),
+                        MaterialTheme.colorScheme.surfaceVariant,
                         MaterialTheme.colorScheme.background
                     )
                 )
@@ -913,7 +913,7 @@ fun ConverterResultCard(
             Text(
                 text = "قمری: ${hijri.formatFull()}",
                 fontSize = 14.sp,
-                color = Color(0xFF60A5FA)
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = "برج فلکی: ${JalaliDate.ZODIAC_NAMES.getOrElse(jalali.month - 1) { "" }}",
@@ -1008,7 +1008,7 @@ fun WidgetsGalleryScreen() {
                         .fillMaxWidth()
                         .height(115.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceVariant)))
                         .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(16.dp)
                 ) {
