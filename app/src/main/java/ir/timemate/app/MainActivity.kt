@@ -34,8 +34,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.timemate.app.alarm.AlarmScheduler
@@ -1193,28 +1195,32 @@ fun AddAlarmDialog(
         title = { Text("تنظیم زنگ جدید", color = IceWhite, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        IconButton(onClick = { hour = (hour + 1) % 24 }) {
-                            Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
+                // The time picker must always read hour (left) : minute (right),
+                // even though the rest of the screen is RTL (Persian).
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            IconButton(onClick = { hour = (hour + 1) % 24 }) {
+                                Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
+                            }
+                            Text(toPersianDigits("%02d".format(hour)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                            IconButton(onClick = { hour = if (hour - 1 < 0) 23 else hour - 1 }) {
+                                Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
+                            }
                         }
-                        Text(toPersianDigits("%02d".format(hour)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
-                        IconButton(onClick = { hour = if (hour - 1 < 0) 23 else hour - 1 }) {
-                            Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
-                        }
-                    }
-                    Text(":", fontSize = 28.sp, color = NeonViolet, fontWeight = FontWeight.Bold)
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        IconButton(onClick = { minute = (minute + 5) % 60 }) {
-                            Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
-                        }
-                        Text(toPersianDigits("%02d".format(minute)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
-                        IconButton(onClick = { minute = if (minute - 5 < 0) 55 else minute - 5 }) {
-                            Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
+                        Text(":", fontSize = 28.sp, color = NeonViolet, fontWeight = FontWeight.Bold)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            IconButton(onClick = { minute = (minute + 1) % 60 }) {
+                                Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
+                            }
+                            Text(toPersianDigits("%02d".format(minute)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                            IconButton(onClick = { minute = if (minute - 1 < 0) 59 else minute - 1 }) {
+                                Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
+                            }
                         }
                     }
                 }
