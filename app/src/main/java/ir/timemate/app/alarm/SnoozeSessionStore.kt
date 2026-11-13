@@ -48,14 +48,15 @@ object SnoozeSessionStore {
         title: String,
         isVibrate: Boolean,
         isGradual: Boolean,
-        ringtoneUri: String?
+        ringtoneUri: String?,
+        sessionId: String = UUID.randomUUID().toString()
     ): SnoozeSession {
-        load(context, alarmId)?.let { previous ->
-            AlarmScheduler.cancelSnooze(context, alarmId, previous.sessionId)
-        }
+        val existing = load(context, alarmId)
+        if (existing?.sessionId == sessionId) return existing
+        existing?.let { AlarmScheduler.cancelSnooze(context, alarmId, it.sessionId) }
         val session = SnoozeSession(
             alarmId = alarmId,
-            sessionId = UUID.randomUUID().toString(),
+            sessionId = sessionId,
             snoozeCount = 0,
             nextTriggerAtMillis = 0L,
             title = title.removeSuffix(" (چرت)"),
