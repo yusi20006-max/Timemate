@@ -44,9 +44,3 @@ data class PrayerTimesDay(
   uri.scheme == "https" && uri.host == "calendar.ut.ac.ir"
  }.getOrDefault(false)
 }
-/** Fails closed until current-year official data is extracted and verified. */
-class OfficialPrayerTimesRepository {
- fun currentState():PrayerTimesState = PrayerTimesState.Unavailable(
-  "داده رسمی سال جاری هنوز از صفحه دانشگاه تهران استخراج و اعتبارسنجی نشده است."
- )
-}
