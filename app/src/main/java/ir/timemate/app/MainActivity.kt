@@ -1165,18 +1165,19 @@ fun GlassAnalogClock(calendar: Calendar) {
     val hour = calendar.get(Calendar.HOUR)
     val minute = calendar.get(Calendar.MINUTE)
     val second = calendar.get(Calendar.SECOND)
+    val colorScheme = MaterialTheme.colorScheme
 
     Canvas(modifier = Modifier.size(160.dp)) {
         val radius = size.minDimension / 2f
         val center = Offset(size.width / 2f, size.height / 2f)
 
         drawCircle(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+            color = colorScheme.primary.copy(alpha = 0.25f),
             radius = radius,
             center = center
         )
         drawCircle(
-            color = MaterialTheme.colorScheme.secondary,
+            color = colorScheme.secondary,
             radius = radius,
             center = center,
             style = Stroke(width = 4f)
@@ -1184,7 +1185,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val hourAngle = Math.toRadians(((hour + minute / 60.0) * 30.0) - 90.0)
         drawLine(
-            color = MaterialTheme.colorScheme.onSurface,
+            color = colorScheme.onSurface,
             start = center,
             end = Offset(
                 center.x + (radius * 0.5f * cos(hourAngle)).toFloat(),
@@ -1196,7 +1197,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val minAngle = Math.toRadians((minute * 6.0) - 90.0)
         drawLine(
-            color = MaterialTheme.colorScheme.tertiary,
+            color = colorScheme.tertiary,
             start = center,
             end = Offset(
                 center.x + (radius * 0.72f * cos(minAngle)).toFloat(),
@@ -1208,7 +1209,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val secAngle = Math.toRadians((second * 6.0) - 90.0)
         drawLine(
-            color = MaterialTheme.colorScheme.primary,
+            color = colorScheme.primary,
             start = center,
             end = Offset(
                 center.x + (radius * 0.85f * cos(secAngle)).toFloat(),
