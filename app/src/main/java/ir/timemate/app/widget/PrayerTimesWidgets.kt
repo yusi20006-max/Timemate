@@ -45,7 +45,7 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
             val cached = cache.get(city, today.toString())
 
             views.setTextViewText(R.id.prayer_city, city.title)
-            views.setTextViewText(R.id.prayer_date, PersianCalendarUtils.today().formatFull())
+            views.setTextViewText(R.id.prayer_date, PersianCalendarUtils.gregorianToJalali(today.year, today.monthValue, today.dayOfMonth).formatFull())
             views.setTextViewText(R.id.prayer_source, PrayerTimesSource.DISPLAY_NAME)
 
             if (cached == null) {
@@ -56,7 +56,7 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
                 val tomorrow = cache.get(city, today.plusDays(1).toString())?.day
                 val next = PrayerTimesEngine.nextPrayer(cached.day, tomorrow, now)
                 if (next == null) {
-                    views.setTextViewText(R.id.prayer_status, "داده آفلاین • وقت بعدی نامشخص")
+                    views.setTextViewText(R.id.prayer_status, "ذخیره‌شده • وقت بعدی نامشخص")
                     views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)
                     views.setTextViewText(R.id.prayer_next, "داده روز بعد موجود نیست")
                 } else {
