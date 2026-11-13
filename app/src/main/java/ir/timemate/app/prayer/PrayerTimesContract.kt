@@ -39,6 +39,10 @@ data class PrayerTimesDay(
   }
   return minutes.zipWithNext().all { (earlier, later) -> later > earlier }
  }
+ fun hasOfficialSource(): Boolean = runCatching {
+  val uri = java.net.URI(sourceUrl)
+  uri.scheme == "https" && uri.host == "calendar.ut.ac.ir"
+ }.getOrDefault(false)
 }
 /** Fails closed until current-year official data is extracted and verified. */
 class OfficialPrayerTimesRepository {
