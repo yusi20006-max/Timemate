@@ -79,10 +79,7 @@ fun ManufacturerSetupGuideDialog(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     OutlinedButton(
                         onClick = {
-                            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                                data = Uri.parse("package:${context.packageName}")
-                            }
-                            settingsLauncher.launch(intent)
+                            settingsLauncher.launch(XiaomiPermissionHelper.exactAlarmSettingsIntent(context))
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("باز کردن تنظیمات زنگ دقیق") }
