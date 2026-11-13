@@ -42,7 +42,7 @@ class OfficialPrayerTimesPdfParserTest {
 
     @Test fun rejectsIncompleteAnnualCoverage() {
         val pages = completeYearPages().toMutableList()
-        pages[11] = pages[11].lineSequence().dropLast(1).joinToString("\n")
+        pages[11] = pages[11].substringBeforeLast("23:30")
         assertTrue(OfficialPrayerTimesPdfParser.parsePages(pages, city, source).isEmpty())
     }
 }
