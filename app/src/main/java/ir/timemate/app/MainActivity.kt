@@ -78,7 +78,6 @@ class MainActivity : ComponentActivity() {
                 Box(Modifier.fillMaxSize().background(Color(0xFF07090E)))
             } else {
                 TimeMateTheme(activeTheme) {
-                    RequestNotificationPermissionIfNeeded()
                     TimeMateMainApp(viewModel, activeTheme)
                 }
             }
@@ -103,16 +102,26 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     val context = LocalContext.current
     val themeScope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
-    var showXiaomiGuide by remember { mutableStateOf(false) }
+    var showManufacturerPicker by remember { mutableStateOf(false) }
+    var showDeviceGuide by remember { mutableStateOf(false) }
+    val devicePreferences by DeviceSetupDataStore.observe(context).collectAsState(initial = null)
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
 
-    LaunchedEffect(Unit) {
-        val preferences = context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
-        if (XiaomiPermissionHelper.isXiaomiDevice() &&
-            !preferences.getBoolean(XIAOMI_GUIDE_SEEN_KEY, false)
-        ) {
-            showXiaomiGuide = true
+    LaunchedEffect(devicePreferences) {
+        val stored = devicePreferences ?: return@LaunchedEffect
+        if (stored.manufacturer == null) {
+            val legacy = context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
+            if (XiaomiPermissionHelper.isXiaomiDevice() &&
+                legacy.getBoolean(XIAOMI_GUIDE_SEEN_KEY, false)
+            ) {
+                DeviceSetupDataStore.setManufacturer(context, DeviceSetupManufacturer.XIAOMI)
+                DeviceSetupDataStore.markGuideCompleted(context)
+            } else {
+                showManufacturerPicker = true
+            }
+        } else if (!stored.guideCompleted) {
+            showDeviceGuide = true
         }
     }
 
@@ -155,23 +164,58 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                     6 -> SettingsScreen(
                         viewModel, selectedTheme,
                         onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },
-                        onOpenXiaomiGuide = { showXiaomiGuide = true }
+                        deviceManufacturer = devicePreferences?.manufacturer,
+                        onOpenDeviceGuide = { showDeviceGuide = true },
+                        onChangeDeviceType = { showManufacturerPicker = true }
                     )
                 }
             }
         }
     }
 
-    if (showXiaomiGuide) {
-        XiaomiFirstRunGuideDialog(
-            onDismiss = {
-                context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
-                    .edit()
-                    .putBoolean(XIAOMI_GUIDE_SEEN_KEY, true)
-                    .apply()
-                showXiaomiGuide = false
-            }
+    if (devicePreferences?.guideCompleted == true) {
+        RequestNotificationPermissionIfNeeded()
+    }
+
+    if (showManufacturerPicker) {
+        DeviceManufacturerPickerDialog(
+            onSelect = { manufacturer ->
+                themeScope.launch {
+                    DeviceSetupDataStore.setManufacturer(context, manufacturer)
+                    showManufacturerPicker = false
+                    showDeviceGuide = true
+                }
+            },
+            onDismiss = { showManufacturerPicker = false }
         )
+    }
+
+    if (showDeviceGuide) {
+        when (devicePreferences?.manufacturer) {
+            DeviceSetupManufacturer.XIAOMI -> XiaomiFirstRunGuideDialog(
+                onDismiss = {
+                    context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
+                        .edit().putBoolean(XIAOMI_GUIDE_SEEN_KEY, true).apply()
+                    themeScope.launch { DeviceSetupDataStore.markGuideCompleted(context) }
+                    showDeviceGuide = false
+                }
+            )
+            DeviceSetupManufacturer.SAMSUNG -> ManufacturerSetupGuideDialog(
+                manufacturer = DeviceSetupManufacturer.SAMSUNG,
+                onDismiss = {
+                    themeScope.launch { DeviceSetupDataStore.markGuideCompleted(context) }
+                    showDeviceGuide = false
+                }
+            )
+            DeviceSetupManufacturer.OTHER -> ManufacturerSetupGuideDialog(
+                manufacturer = DeviceSetupManufacturer.OTHER,
+                onDismiss = {
+                    themeScope.launch { DeviceSetupDataStore.markGuideCompleted(context) }
+                    showDeviceGuide = false
+                }
+            )
+            null -> Unit
+        }
     }
 }
 
@@ -1649,7 +1693,9 @@ fun SettingsScreen(
     viewModel: TimeMateViewModel,
     selectedTheme: AppTheme,
     onThemeSelected: (AppTheme) -> Unit,
-    onOpenXiaomiGuide: () -> Unit = {}
+    deviceManufacturer: DeviceSetupManufacturer?,
+    onOpenDeviceGuide: () -> Unit,
+    onChangeDeviceType: () -> Unit
 ) {
     val context = LocalContext.current
     var isChimeEnabled by remember {
@@ -1788,33 +1834,21 @@ fun SettingsScreen(
             }
         }
 
-        if (XiaomiPermissionHelper.isXiaomiDevice()) {
-            item {
-                GlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    borderColor = MaterialTheme.colorScheme.secondary
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            text = "راهنمای پایداری زنگ در MIUI و HyperOS",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            text = "تنظیمات شروع خودکار، محدودیت باتری و مجوز زنگ دقیق را هر زمان خواستید دوباره بررسی کنید.",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Button(
-                            onClick = onOpenXiaomiGuide,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                        ) {
-                            Icon(Icons.Default.Tune, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("باز کردن راهنمای تنظیمات شیائومی")
-                        }
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.secondary) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("راهنمای تنظیمات گوشی", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+                    Text(
+                        "نوع دستگاه: ${deviceManufacturer?.title ?: "انتخاب‌نشده"}",
+                        fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedButton(onClick = onOpenDeviceGuide, modifier = Modifier.fillMaxWidth(), enabled = deviceManufacturer != null) {
+                        Icon(Icons.Default.Tune, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("مشاهده راهنمای دستگاه")
+                    }
+                    TextButton(onClick = onChangeDeviceType, modifier = Modifier.fillMaxWidth()) {
+                        Text("تغییر نوع گوشی")
                     }
                 }
             }
