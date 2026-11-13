@@ -11,7 +11,7 @@ import java.util.Locale
  */
 object OfficialPrayerTimesPdfParser {
     private val timeRegex = Regex("""(?<!\d)([0-2]?\d):([0-5]\d)(?!\d)""")
-    private val trailingDayRegex = Regex("""(\d{1,2})\\s*$""")
+    private val trailingDayRegex = Regex("""(\d{1,2})\s*$""")
 
     fun parseText(text: String, city: PrayerCity, sourceUrl: String): List<PrayerTimesDay> {
         if (!sourceUrl.startsWith("https://calendar.ut.ac.ir/")) return emptyList()
