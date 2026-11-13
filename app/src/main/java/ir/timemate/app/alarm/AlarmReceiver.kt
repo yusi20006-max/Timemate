@@ -9,6 +9,8 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import ir.timemate.app.MainActivity
 import ir.timemate.app.TimeMateApp
+import ir.timemate.app.data.model.AlarmHistoryEntity
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,7 +40,9 @@ class AlarmReceiver : BroadcastReceiver() {
                 val ringtoneUri = intent.getStringExtra(EXTRA_RINGTONE_URI)
                 val snoozeMinutes = SnoozePreferences.getMinutes(context)
                 val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
-                val suppliedSessionId = intent.getStringExtra(EXTRA_SNOOZE_SESSION_ID)
+                val suppliedSessionId = intent.getStringExtra(EXTRA_SESSION_ID)
+                    ?: intent.getStringExtra(EXTRA_SNOOZE_SESSION_ID)
+                val scheduledAtMillis = intent.getLongExtra(EXTRA_SCHEDULED_AT, 0L)
                 val suppliedSnoozeCount = intent.getIntExtra(EXTRA_SNOOZE_COUNT, 0)
                 val session = if (isSnooze && !suppliedSessionId.isNullOrBlank()) {
                     SnoozeSessionStore.resume(
@@ -47,7 +51,8 @@ class AlarmReceiver : BroadcastReceiver() {
                     ).also { SnoozeSessionStore.markTriggered(context, it) }
                 } else {
                     SnoozeSessionStore.startNew(
-                        context, alarmId, title, isVibrate, isGradual, ringtoneUri
+                        context, alarmId, title, isVibrate, isGradual, ringtoneUri,
+                        suppliedSessionId ?: UUID.randomUUID().toString()
                     )
                 }
 
@@ -73,6 +78,22 @@ class AlarmReceiver : BroadcastReceiver() {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             val db = (context.applicationContext as TimeMateApp).database
+                            val now = System.currentTimeMillis()
+                            val historyDao = db.alarmHistoryDao()
+                            historyDao.insertStartedSession(
+                                AlarmHistoryEntity(
+                                    alarmId = alarmId,
+                                    sessionId = session.sessionId,
+                                    scheduledAtMillis = scheduledAtMillis.takeIf { it > 0L } ?: now,
+                                    startedAtMillis = now,
+                                    snoozeCount = session.snoozeCount
+                                )
+                            )
+                            if (session.snoozeCount > 0) {
+                                historyDao.recordSnooze(session.sessionId, session.snoozeCount, now)
+                            }
+                            historyDao.deleteCompletedBefore(now - 180L * 24L * 60L * 60L * 1000L)
+
                             val alarm = db.dao().getAlarmById(alarmId)
                             if (alarm != null) {
                                 if (alarm.daysOfWeek.isNotEmpty()) {
@@ -152,5 +173,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val EXTRA_IS_SNOOZE = "extra_is_snooze"
         const val EXTRA_SNOOZE_SESSION_ID = "extra_snooze_session_id"
         const val EXTRA_SNOOZE_COUNT = "extra_snooze_count"
+        const val EXTRA_SESSION_ID = "extra_alarm_session_id"
+        const val EXTRA_SCHEDULED_AT = "extra_alarm_scheduled_at"
     }
 }
