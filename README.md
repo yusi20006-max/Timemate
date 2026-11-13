@@ -37,6 +37,52 @@
 | 🎨 سه تم رنگی | انتخاب تم و ذخیره دائمی آن با DataStore |
 | 💾 پشتیبان‌گیری | خروجی پشتیبان محلی JSON برای داده‌های پشتیبانی‌شده |
 
+### تجربه بصری برنامه
+
+TimeMate با رابط کاربری تیره و سه تم قابل انتخاب طراحی شده است. تصاویر زیر باید از نسخه واقعی برنامه و پس از ثبت اسکرین‌شات روی دستگاه تهیه شوند؛ از تصویرسازی غیرواقعی به‌عنوان اسکرین‌شات محصول استفاده نمی‌کنیم.
+
+| صفحه | محتوای قابل مشاهده |
+|---|---|
+| داشبورد | نمای کلی زنگ‌ها، یادآورها و عادت‌ها |
+| تنظیم زنگ | زمان‌بندی و تنظیمات Snooze |
+| آمار | تاریخچه جلسات و روندهای بیدارباش |
+| تنظیمات | انتخاب تم و راهنمای سازنده گوشی |
+
+### سه تم برنامه
+
+<div align="center">
+  <img src="assets/theme-previews.svg" alt="پیش‌نمایش سه تم TimeMate" width="100%" />
+</div>
+
+- **Deep Ocean:** آبی لاجوردی و بنفش نئونی
+- **Midnight Rose:** قرمز تیره و صورتی نئونی
+- **Forest Night:** سبز زمردی و فیروزه‌ای
+
+### قابلیت‌های شاخص
+
+- **Smart Alarm:** زمان‌بندی دقیق و تجربه تمام‌صفحه زنگ
+- **Snooze Control:** فاصله چرت قابل تنظیم و مدیریت جلسه
+- **Sleep Statistics:** تاریخچه و تحلیل روند بیدارباش
+- **Persian Calendar:** تاریخ شمسی و نمایش ارقام فارسی
+- **Personalization:** سه تم رنگی و تنظیمات ذخیره‌شونده
+
+### سازگاری دستگاه‌ها
+
+| سازنده | وضعیت راهنمای راه‌اندازی |
+|---|---|
+| Xiaomi / Redmi / POCO | راهنمای MIUI و HyperOS موجود |
+| Samsung | راهنمای اختصاصی One UI در برنامه‌ریزی |
+| سایر دستگاه‌های Android | راهنمای عمومی در برنامه‌ریزی |
+
+### راهنمای نصب تصویری
+
+1. دریافت APK از [GitHub Actions](https://github.com/yusi20006-max/Timemate/actions) یا بخش Releases.
+2. استخراج فایل APK از آرشیو دانلودشده.
+3. بازکردن APK و تأیید نصب از منبع مورد اعتماد.
+4. اجرای TimeMate و تکمیل راهنمای مجوزهای متناسب با دستگاه.
+
+> تصاویر واقعی مراحل نصب و صفحات برنامه پس از ثبت از نسخه نهایی به این بخش افزوده می‌شوند.
+
 ### سازگاری و راه‌اندازی اولیه
 
 راهنمای فعلی MIUI/HyperOS برای گوشی‌های Xiaomi، Redmi و POCO در دسترس است. راهنمای اختصاصی Samsung One UI و راهنمای عمومی سایر سازندگان در حال توسعه است تا مراحل مجوزها و تنظیمات پس‌زمینه بر اساس نوع گوشی نمایش داده شوند.
@@ -74,6 +120,52 @@
 - **Reminders & habits:** organize tasks, set priorities, and track daily streaks.
 - **Three persistent themes:** switch between color palettes, saved with DataStore.
 - **Local backup:** JSON export for supported app data.
+
+### Visual tour
+
+TimeMate uses a dark interface with three selectable themes. Product screenshots should be captured from the actual app build; illustrative artwork is not presented as a real app screenshot.
+
+| Screen | What it shows |
+|---|---|
+| Dashboard | Alarms, reminders, and habits overview |
+| Alarm setup | Scheduling and snooze configuration |
+| Statistics | Alarm history and wake-up trends |
+| Settings | Theme selection and device setup guide |
+
+### Three app themes
+
+<div align="center">
+  <img src="assets/theme-previews.svg" alt="TimeMate theme previews" width="100%" />
+</div>
+
+- **Deep Ocean:** Azure blue and neon purple
+- **Midnight Rose:** Deep red and neon pink
+- **Forest Night:** Emerald green and turquoise
+
+### Feature highlights
+
+- **Smart Alarm:** reliable scheduling and a full-screen ringing experience
+- **Snooze Control:** configurable intervals and session tracking
+- **Sleep Statistics:** alarm history and wake-up trend analysis
+- **Persian Calendar:** Jalali dates and Persian numeral support
+- **Personalization:** three persistent color themes
+
+### Device compatibility
+
+| Device family | Setup guidance |
+|---|---|
+| Xiaomi / Redmi / POCO | MIUI and HyperOS guidance available |
+| Samsung | Dedicated One UI guidance planned |
+| Other Android devices | Generic Android guidance planned |
+
+### Installation guide
+
+1. Download an APK from [GitHub Actions](https://github.com/yusi20006-max/Timemate/actions) or Releases.
+2. Extract the APK from the downloaded archive.
+3. Open the APK and approve installation from a trusted source.
+4. Launch TimeMate and follow the device-specific permission guide.
+
+> Actual app and installation screenshots will be added after being captured from the final build.
 
 ### Build
 
