@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
@@ -53,7 +54,7 @@ class AlarmRingActivity : ComponentActivity() {
 
             fun confirmSnooze() {
                 val nextCount = initialSnoozeCount + 1
-                AlarmScheduler.scheduleSnooze(
+                val scheduled = AlarmScheduler.scheduleSnooze(
                     this@AlarmRingActivity,
                     alarmId,
                     title.removeSuffix(" (چرت)"),
@@ -64,7 +65,15 @@ class AlarmRingActivity : ComponentActivity() {
                     sessionId,
                     nextCount
                 )
-                stopAlarmAndFinish(clearSession = false)
+                if (scheduled) {
+                    stopAlarmAndFinish(clearSession = false)
+                } else {
+                    Toast.makeText(
+                        this@AlarmRingActivity,
+                        "زمان‌بندی چرت انجام نشد؛ زنگ همچنان فعال است.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
             TimeMateTheme {
                 val cal = Calendar.getInstance()

@@ -130,7 +130,7 @@ object AlarmScheduler {
         sessionId: String,
         snoozeCount: Int,
         triggerAtMillis: Long? = null
-    ) {
+    ): Boolean {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val triggerTime = maxOf(
             triggerAtMillis ?: (System.currentTimeMillis() + snoozeMinutes * 60 * 1000L),
@@ -182,9 +182,11 @@ object AlarmScheduler {
 
         try {
             alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent), pendingIntent)
+            true
         } catch (e: SecurityException) {
             SnoozeSessionStore.clear(context, alarmId, sessionId)
             e.printStackTrace()
+            false
         }
     }
 
