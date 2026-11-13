@@ -18,7 +18,7 @@ enum class AppTheme(val storageId: String, val displayName: String, val descript
 
     companion object {
         fun fromStorage(value: String?): AppTheme =
-            entries.firstOrNull { it.storageId == value } ?: DEEP_OCEAN
+            values().firstOrNull { it.storageId == value } ?: DEEP_OCEAN
     }
 }
 
