@@ -10,6 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import ir.timemate.app.widget.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ir.timemate.app.ui.theme.AppTheme
@@ -25,7 +29,7 @@ class PrayerTimesActivity:ComponentActivity(){
  LazyColumn(Modifier.fillMaxSize().padding(16.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
   item{Text("اوقات شرعی",style=MaterialTheme.typography.headlineMedium);Text(PrayerTimesSource.DISPLAY_NAME,color=MaterialTheme.colorScheme.onSurfaceVariant)}
   item{Card(Modifier.fillMaxWidth()){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
-   Text("شهر انتخاب‌شده: ${city.title}",style=MaterialTheme.typography.titleMedium)
+   Text("شهر انتخاب‌شده: ${city.title}",style=MaterialTheme.typography.titleMedium)\n   Text("تاریخ: ${today}",color=MaterialTheme.colorScheme.onSurfaceVariant)
    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
     OutlinedButton(onClick={val i=PrayerCities.provincialCapitals.indexOfFirst{it.id==cityId};cityId=PrayerCities.provincialCapitals[(i-1).coerceAtLeast(0)].id;context.getSharedPreferences("prayer_times",0).edit().putString("city_id",cityId).apply();BasePrayerTimesWidgetProvider.updateAll(context)}){Text("شهر قبلی")}
     OutlinedButton(onClick={val i=PrayerCities.provincialCapitals.indexOfFirst{it.id==cityId};cityId=PrayerCities.provincialCapitals[(i+1)%PrayerCities.provincialCapitals.size].id;context.getSharedPreferences("prayer_times",0).edit().putString("city_id",cityId).apply();BasePrayerTimesWidgetProvider.updateAll(context)}){Text("شهر بعدی")}
