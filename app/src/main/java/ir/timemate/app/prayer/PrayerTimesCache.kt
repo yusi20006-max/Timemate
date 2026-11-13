@@ -21,7 +21,7 @@ class PrayerTimesCache(context: Context) {
         return preferences.edit().putString(key, gson.toJson(CachedPrayerTimes(day, fetchedAtMillis))).commit()
     }
 
-    fun get(city: PrayerCity, dateIso: String): CachedPrayerTimes? {
+    fun saveAll(days: List<PrayerTimesDay>, fetchedAtMillis: Long = System.currentTimeMillis()): Boolean {\n        if (days.size !in 365..366 || days.any { !it.hasValidTimes() || !it.hasOfficialSource() }) return false\n        if (days.any { PrayerCities.provincialCapitals.none { city -> city.id == it.city.id } }) return false\n        val editor = preferences.edit()\n        days.forEach { day ->\n            editor.putString(key(day.city.id, day.dateIso), gson.toJson(CachedPrayerTimes(day, fetchedAtMillis)))\n        }\n        return editor.commit()\n    }\n\n    fun get(city: PrayerCity, dateIso: String): CachedPrayerTimes? {
         if (runCatching { LocalDate.parse(dateIso) }.isFailure) return null
         val raw = preferences.getString(key(city.id, dateIso), null) ?: return null
         return runCatching { gson.fromJson(raw, CachedPrayerTimes::class.java) }
