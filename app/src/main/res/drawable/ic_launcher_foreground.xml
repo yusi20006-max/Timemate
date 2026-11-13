@@ -4,57 +4,27 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- صفحه داخلی ساعت (آبی/سرمه‌ای عمیق) -->
-    <path
-        android:fillColor="#FF1B2B65"
-        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
-
-    <!-- حلقه دور ساعت (بنفش نئونی تخت) -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFA855F7"
-        android:strokeWidth="4.2"
-        android:pathData="M54,54m-30,0a30,30 0,1 1,60 0a30,30 0,1 1,-60 0" />
-
-    <!-- نشانگرهای ۴ جهت اصلی ساعت (سفید با لبه‌های گرد) -->
+        android:strokeColor="#FF16DDF7"
+        android:strokeWidth="4.8"
+        android:pathData="M54,18 A36,36 0,1 1,53.9,18" />
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="2.8"
+        android:strokeColor="#FF9B4DFF"
+        android:strokeWidth="4.8"
         android:strokeLineCap="round"
-        android:pathData="M54,29 L54,32 M54,76 L54,79 M29,54 L32,54 M76,54 L79,54" />
-
-    <!-- عقربه‌های ساعت و دقیقه (سفید یکدست با زاویه ۱۰:۱۰) -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4.2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M43,46 L54,54 L67,42" />
-
-    <!-- نقطه مرکزی عقربه‌ها -->
+        android:pathData="M79,28 A36,36 0,0 1,87,51" />
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M54,54m-3.6,0a3.6,3.6 0,1 1,7.2 0a3.6,3.6 0,1 1,-7.2 0" />
-
-    <!-- حاشیه جداکننده بج تیک در پایین-راست -->
-    <path
-        android:fillColor="#FF25429E"
-        android:pathData="M74,74m-13.5,0a13.5,13.5 0,1 1,27 0a13.5,13.5 0,1 1,-27 0" />
-
-    <!-- دایره بنفش بج تیک -->
-    <path
-        android:fillColor="#FFB558F6"
-        android:pathData="M74,74m-11.5,0a11.5,11.5 0,1 1,23 0a11.5,11.5 0,1 1,-23 0" />
-
-    <!-- علامت تیک سفید داخل بج -->
+        android:pathData="M27,34 L81,34 L81,45 L60,45 L60,78 L48,78 L48,45 L27,45 Z" />
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
+        android:strokeColor="#FF18DFF5"
         android:strokeWidth="3.2"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M68.5,74.2 L72.3,78 L79.8,70.2" />
+        android:pathData="M77,25 L89,17" />
+    <path
+        android:fillColor="#FFFF65E8"
+        android:pathData="M89,17m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
 </vector>

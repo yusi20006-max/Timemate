@@ -29,6 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.timemate.app.ui.theme.*
+import ir.timemate.app.TimeMateApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import ir.timemate.app.util.toPersianDigits
 import java.util.Calendar
 import ir.timemate.app.alarm.SnoozePreferences
@@ -66,6 +71,12 @@ class AlarmRingActivity : ComponentActivity() {
                     nextCount
                 )
                 if (scheduled) {
+                    if (sessionId.isNotBlank()) {
+                        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                            (application as TimeMateApp).database.alarmHistoryDao()
+                                .recordSnooze(sessionId, nextCount, System.currentTimeMillis())
+                        }
+                    }
                     stopAlarmAndFinish(clearSession = false)
                 } else {
                     Toast.makeText(
@@ -203,6 +214,10 @@ class AlarmRingActivity : ComponentActivity() {
         val sessionId = intent.getStringExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID).orEmpty()
         if (clearSession && alarmId != -1 && sessionId.isNotBlank()) {
             AlarmScheduler.cancelSnooze(this, alarmId, sessionId)
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                (application as TimeMateApp).database.alarmHistoryDao()
+                    .finishSession(sessionId, System.currentTimeMillis())
+            }
         }
         val stopIntent = Intent(this, AlarmService::class.java).apply {
             action = AlarmService.ACTION_STOP_ALARM
