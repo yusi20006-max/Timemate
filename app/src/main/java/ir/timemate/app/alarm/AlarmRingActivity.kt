@@ -64,7 +64,7 @@ class AlarmRingActivity : ComponentActivity() {
                     sessionId,
                     nextCount
                 )
-                stopAlarmAndFinish()
+                stopAlarmAndFinish(clearSession = false)
             }
             TimeMateTheme {
                 val cal = Calendar.getInstance()
@@ -189,11 +189,10 @@ class AlarmRingActivity : ComponentActivity() {
         }
     }
 
-    private fun stopAlarmAndFinish() {
+    private fun stopAlarmAndFinish(clearSession: Boolean = true) {
         val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, -1)
         val sessionId = intent.getStringExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID).orEmpty()
-        if (alarmId != -1 && sessionId.isNotBlank()) {
-            SnoozeSessionStore.clear(this, alarmId, sessionId)
+        if (clearSession && alarmId != -1 && sessionId.isNotBlank()) {
             AlarmScheduler.cancelSnooze(this, alarmId, sessionId)
         }
         val stopIntent = Intent(this, AlarmService::class.java).apply {
