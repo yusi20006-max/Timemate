@@ -36,6 +36,21 @@ class OfficialPrayerTimesPdfParserTest {
         assertEquals("23:30", first.midnight)
     }
 
+    @Test fun matchesPublishedTehran1405FarvardinFirstDayRow() {
+        val pages = completeYearPages().toMutableList()
+        pages[0] = pages[0].replaceFirst(
+            "23:30 18:30 18:00 12:00 06:00 05:00 شنبه 1",
+            "23:29 18:35 18:17 12:12 06:07 04:43 شنبه 1"
+        )
+        val first = OfficialPrayerTimesPdfParser.parsePages(pages, city, source).first()
+        assertEquals("04:43", first.fajr)
+        assertEquals("06:07", first.sunrise)
+        assertEquals("12:12", first.dhuhr)
+        assertEquals("18:17", first.sunset)
+        assertEquals("18:35", first.maghrib)
+        assertEquals("23:29", first.midnight)
+    }
+
     @Test fun rejectsNonUniversityPdfUrl() {
         assertTrue(OfficialPrayerTimesPdfParser.parsePages(completeYearPages(), city, "https://example.com/Tehran1405.pdf").isEmpty())
     }
