@@ -7,7 +7,7 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import java.io.ByteArrayInputStream
+import java.io.ByteArrayInputStream\nimport java.time.LocalDate\nimport java.time.ZoneId
 
 class OfficialPrayerTimesRepository(context: Context) {
     private val appContext = context.applicationContext
@@ -66,6 +66,6 @@ class OfficialPrayerTimesRepository(context: Context) {
     companion object {
         private const val OFFICIAL_HOST = "calendar.ut.ac.ir"
         private const val NETWORK_TIMEOUT_MS = 25_000
-        private const val MAX_PDF_BYTES = 8 * 1024 * 1024
+        private const val MAX_PDF_BYTES = 8 * 1024 * 1024\n        private const val CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
     }
 }
