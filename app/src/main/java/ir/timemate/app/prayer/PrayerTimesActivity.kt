@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import ir.timemate.app.ui.theme.AppTheme
 import ir.timemate.app.ui.theme.TimeMateTheme
 import ir.timemate.app.widget.*
+import ir.timemate.app.util.PersianCalendarUtils
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -68,7 +69,7 @@ fun PrayerTimesScreen() {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("شهر انتخاب‌شده: ${city.title}", style = MaterialTheme.typography.titleMedium)
-                    Text("تاریخ: ${today}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("تاریخ: ${PersianCalendarUtils.today().formatFull()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = {
                             val index = PrayerCities.provincialCapitals.indexOfFirst { it.id == cityId }
