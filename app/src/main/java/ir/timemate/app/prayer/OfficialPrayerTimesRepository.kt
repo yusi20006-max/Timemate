@@ -7,13 +7,24 @@ import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import java.io.ByteArrayInputStream\nimport java.time.LocalDate\nimport java.time.ZoneId
+import java.io.ByteArrayInputStream
+import java.time.LocalDate
+import java.time.ZoneId
 
 class OfficialPrayerTimesRepository(context: Context) {
     private val appContext = context.applicationContext
     private val cache = PrayerTimesCache(appContext)
 
-    suspend fun refreshYear(city: PrayerCity): Boolean = withContext(Dispatchers.IO) {
+    suspend fun refreshYear(city: PrayerCity, force: Boolean = false): Boolean = withContext(Dispatchers.IO) {
+        val zone = runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran"))
+        val today = LocalDate.now(zone).toString()
+        val cachedToday = cache.get(city, today)
+        if (!force && cachedToday != null &&
+            System.currentTimeMillis() - cachedToday.fetchedAtMillis < CACHE_MAX_AGE_MS
+        ) {
+            return@withContext true
+        }
+
         runCatching {
             val pdfUrl = resolveOfficialPdfUrl(city)
             val response = Jsoup.connect(pdfUrl)
@@ -66,6 +77,7 @@ class OfficialPrayerTimesRepository(context: Context) {
     companion object {
         private const val OFFICIAL_HOST = "calendar.ut.ac.ir"
         private const val NETWORK_TIMEOUT_MS = 25_000
-        private const val MAX_PDF_BYTES = 8 * 1024 * 1024\n        private const val CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
+        private const val MAX_PDF_BYTES = 8 * 1024 * 1024
+        private const val CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
     }
 }
