@@ -34,13 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import ir.timemate.app.data.model.AlarmHistoryEntity
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.onSurfaceVariant
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.tertiary
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.outlineVariant
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.onSurface
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.secondary
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.primary
-import ir.timemate.app.ui.theme.MaterialTheme.colorScheme.tertiary
 import ir.timemate.app.ui.theme.GlassCard
 import ir.timemate.app.util.PersianCalendarUtils
 import ir.timemate.app.util.toPersianDigits
