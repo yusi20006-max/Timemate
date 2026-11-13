@@ -36,7 +36,20 @@ class AlarmReceiver : BroadcastReceiver() {
                 val isVibrate = intent.getBooleanExtra(EXTRA_IS_VIBRATE, true)
                 val isGradual = intent.getBooleanExtra(EXTRA_IS_GRADUAL, true)
                 val ringtoneUri = intent.getStringExtra(EXTRA_RINGTONE_URI)
-                val snoozeMinutes = intent.getIntExtra(EXTRA_SNOOZE_MINUTES, 5)
+                val snoozeMinutes = SnoozePreferences.getMinutes(context)
+                val isSnooze = intent.getBooleanExtra(EXTRA_IS_SNOOZE, false)
+                val suppliedSessionId = intent.getStringExtra(EXTRA_SNOOZE_SESSION_ID)
+                val suppliedSnoozeCount = intent.getIntExtra(EXTRA_SNOOZE_COUNT, 0)
+                val session = if (isSnooze && !suppliedSessionId.isNullOrBlank()) {
+                    SnoozeSessionStore.resume(
+                        context, alarmId, suppliedSessionId, suppliedSnoozeCount,
+                        title.removeSuffix(" (چرت)"), isVibrate, isGradual, ringtoneUri
+                    ).also { SnoozeSessionStore.markTriggered(context, it) }
+                } else {
+                    SnoozeSessionStore.startNew(
+                        context, alarmId, title, isVibrate, isGradual, ringtoneUri
+                    )
+                }
 
                 val serviceIntent = Intent(context, AlarmService::class.java).apply {
                     putExtra(EXTRA_ALARM_ID, alarmId)
@@ -45,6 +58,8 @@ class AlarmReceiver : BroadcastReceiver() {
                     putExtra(EXTRA_IS_GRADUAL, isGradual)
                     putExtra(EXTRA_RINGTONE_URI, ringtoneUri)
                     putExtra(EXTRA_SNOOZE_MINUTES, snoozeMinutes)
+                    putExtra(EXTRA_SNOOZE_SESSION_ID, session.sessionId)
+                    putExtra(EXTRA_SNOOZE_COUNT, session.snoozeCount)
                 }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -134,5 +149,8 @@ class AlarmReceiver : BroadcastReceiver() {
         const val EXTRA_IS_GRADUAL = "extra_is_gradual"
         const val EXTRA_RINGTONE_URI = "extra_ringtone_uri"
         const val EXTRA_SNOOZE_MINUTES = "extra_snooze_minutes"
+        const val EXTRA_IS_SNOOZE = "extra_is_snooze"
+        const val EXTRA_SNOOZE_SESSION_ID = "extra_snooze_session_id"
+        const val EXTRA_SNOOZE_COUNT = "extra_snooze_count"
     }
 }

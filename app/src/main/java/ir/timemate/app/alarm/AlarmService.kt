@@ -34,6 +34,8 @@ class AlarmService : Service() {
         val isGradual = intent?.getBooleanExtra(AlarmReceiver.EXTRA_IS_GRADUAL, true) ?: true
         val ringtoneUriStr = intent?.getStringExtra(AlarmReceiver.EXTRA_RINGTONE_URI)
         val snoozeMinutes = intent?.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, 5) ?: 5
+        val sessionId = intent?.getStringExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID).orEmpty()
+        val snoozeCount = intent?.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, 0) ?: 0
 
         acquireWakeLock()
 
@@ -45,6 +47,8 @@ class AlarmService : Service() {
             putExtra(AlarmReceiver.EXTRA_IS_GRADUAL, isGradual)
             putExtra(AlarmReceiver.EXTRA_RINGTONE_URI, ringtoneUriStr)
             putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, snoozeMinutes)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID, sessionId)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, snoozeCount)
         }
 
         val fullScreenPendingIntent = PendingIntent.getActivity(

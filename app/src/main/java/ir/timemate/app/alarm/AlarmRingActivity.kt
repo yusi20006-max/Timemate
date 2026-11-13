@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.*
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import ir.timemate.app.ui.theme.*
 import ir.timemate.app.util.toPersianDigits
 import java.util.Calendar
+import ir.timemate.app.alarm.SnoozePreferences
+import ir.timemate.app.alarm.SnoozeSessionStore
 
 class AlarmRingActivity : ComponentActivity() {
 
@@ -42,9 +45,36 @@ class AlarmRingActivity : ComponentActivity() {
         val isVibrate = intent.getBooleanExtra(AlarmReceiver.EXTRA_IS_VIBRATE, true)
         val isGradual = intent.getBooleanExtra(AlarmReceiver.EXTRA_IS_GRADUAL, true)
         val ringtoneUri = intent.getStringExtra(AlarmReceiver.EXTRA_RINGTONE_URI)
-        val snoozeMinutes = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, 5)
+        val snoozeMinutes = SnoozePreferences.getMinutes(this)
+        val sessionId = intent.getStringExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID).orEmpty()
+        val initialSnoozeCount = intent.getIntExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, 0)
 
         setContent {
+            var showThirdSnoozeWarning by remember { mutableStateOf(false) }
+
+            fun confirmSnooze() {
+                val nextCount = initialSnoozeCount + 1
+                val scheduled = AlarmScheduler.scheduleSnooze(
+                    this@AlarmRingActivity,
+                    alarmId,
+                    title.removeSuffix(" (چرت)"),
+                    snoozeMinutes,
+                    isVibrate,
+                    isGradual,
+                    ringtoneUri,
+                    sessionId,
+                    nextCount
+                )
+                if (scheduled) {
+                    stopAlarmAndFinish(clearSession = false)
+                } else {
+                    Toast.makeText(
+                        this@AlarmRingActivity,
+                        "زمان‌بندی چرت انجام نشد؛ زنگ همچنان فعال است.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
             TimeMateTheme {
                 val cal = Calendar.getInstance()
                 val timeStr = "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
@@ -102,16 +132,11 @@ class AlarmRingActivity : ComponentActivity() {
 
                         Button(
                             onClick = {
-                                AlarmScheduler.scheduleSnooze(
-                                    this@AlarmRingActivity,
-                                    alarmId,
-                                    title,
-                                    snoozeMinutes,
-                                    isVibrate,
-                                    isGradual,
-                                    ringtoneUri
-                                )
-                                stopAlarmAndFinish()
+                                if (initialSnoozeCount == 2) {
+                                    showThirdSnoozeWarning = true
+                                } else {
+                                    confirmSnooze()
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure),
                             shape = RoundedCornerShape(20.dp),
@@ -143,10 +168,42 @@ class AlarmRingActivity : ComponentActivity() {
                     }
                 }
             }
+
+            if (showThirdSnoozeWarning) {
+                AlertDialog(
+                    onDismissRequest = { showThirdSnoozeWarning = false },
+                    title = { Text("هشدار تکرار چرت", color = IceWhite, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Text(
+                            "این سومین بار است که زمان بیدارباش را عقب می‌اندازید. اگر ادامه دهید، زنگ دوباره پس از $snoozeMinutes دقیقه پخش می‌شود.",
+                            color = CoolSilver
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showThirdSnoozeWarning = false
+                            confirmSnooze()
+                        }) {
+                            Text("ادامه چرت", color = NeonViolet)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showThirdSnoozeWarning = false }) {
+                            Text("برگشت به زنگ", color = CoolSilver)
+                        }
+                    },
+                    containerColor = MidnightBlue
+                )
+            }
         }
     }
 
-    private fun stopAlarmAndFinish() {
+    private fun stopAlarmAndFinish(clearSession: Boolean = true) {
+        val alarmId = intent.getIntExtra(AlarmReceiver.EXTRA_ALARM_ID, -1)
+        val sessionId = intent.getStringExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID).orEmpty()
+        if (clearSession && alarmId != -1 && sessionId.isNotBlank()) {
+            AlarmScheduler.cancelSnooze(this, alarmId, sessionId)
+        }
         val stopIntent = Intent(this, AlarmService::class.java).apply {
             action = AlarmService.ACTION_STOP_ALARM
         }
