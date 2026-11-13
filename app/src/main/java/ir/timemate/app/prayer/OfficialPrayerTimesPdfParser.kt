@@ -2,7 +2,7 @@ package ir.timemate.app.prayer
 
 import ir.timemate.app.util.JalaliDate
 import ir.timemate.app.util.PersianCalendarUtils
-import java.util.Locale
+import java.util.Locale\nimport java.time.LocalDate
 
 /**
  * Parses the official 1405 city PDF text. Column order in the source PDF is:
