@@ -32,6 +32,11 @@ class OfficialPrayerTimesRepository(context: Context) {
                 .maxBodySize(MAX_PDF_BYTES)
                 .timeout(NETWORK_TIMEOUT_MS)
                 .execute()
+            val finalPdfUrl = response.url().toString()
+            val finalUri = java.net.URI(finalPdfUrl)
+            require(finalUri.scheme == "https" && finalUri.host == OFFICIAL_HOST &&
+                finalUri.path.contains("1405.pdf", ignoreCase = true)
+            ) { "مسیر نهایی دریافت PDF از دامنه رسمی دانشگاه خارج شده است." }
             val bytes = response.bodyAsBytes()
             require(bytes.size in 1..MAX_PDF_BYTES) { "فایل رسمی خالی یا بیش از حد بزرگ است." }
             require(bytes.take(5).toByteArray().toString(Charsets.ISO_8859_1).startsWith("%PDF-")) {
@@ -48,7 +53,7 @@ class OfficialPrayerTimesRepository(context: Context) {
                     }.getText(document)
                 }
             }
-            val days = OfficialPrayerTimesPdfParser.parsePages(pageTexts, city, pdfUrl)
+            val days = OfficialPrayerTimesPdfParser.parsePages(pageTexts, city, finalPdfUrl)
             require(days.size in 365..366) { "پوشش کامل سال ۱۴۰۵ از فایل رسمی استخراج نشد." }
             require(cache.saveAll(days)) { "ذخیره داده رسمی در حافظه ناموفق بود." }
             true
