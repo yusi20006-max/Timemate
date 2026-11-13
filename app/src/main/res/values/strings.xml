@@ -5,4 +5,9 @@
     <string name="widget_2_name">TimeMate — ویجت ۲ (بزرگ و خوانا)</string>
     <string name="widget_3_name">TimeMate — ویجت ۳ (مربعی جمع‌وجور)</string>
     <string name="widget_4_name">TimeMate — ویجت ۴ (نواری فوق‌مینیمال)</string>
+    <string name="prayer_widget_classic">اوقات شرعی — کلاسیک تیره</string>
+    <string name="prayer_widget_bright">اوقات شرعی — روشن تصویری</string>
+    <string name="prayer_widget_minimal">اوقات شرعی — مدرن مینیمال</string>
+    <string name="prayer_widget_glass">اوقات شرعی — شیشه‌ای رنگی</string>
+    <string name="prayer_widget_persian">اوقات شرعی — سنتی ایرانی</string>
 </resources>
