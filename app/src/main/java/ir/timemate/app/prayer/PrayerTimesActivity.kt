@@ -13,7 +13,7 @@ import ir.timemate.app.ui.theme.TimeMateTheme
 class PrayerTimesActivity:ComponentActivity(){
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{TimeMateTheme(AppTheme.DEEP_OCEAN){PrayerTimesScreen()}}}
 }
-@Composable private fun PrayerTimesScreen(){
+@Composable fun PrayerTimesScreen(){
  val context=androidx.compose.ui.platform.LocalContext.current
  var cityId by remember { mutableStateOf(context.getSharedPreferences("prayer_times",0).getString("city_id","tehran")?:"tehran") }
  val city=PrayerCities.provincialCapitals.first{it.id==cityId}
