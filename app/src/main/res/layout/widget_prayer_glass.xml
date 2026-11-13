@@ -5,6 +5,8 @@
  android:background="#252047">
  <TextView android:id="@+id/prayer_city" android:layout_width="match_parent" android:layout_height="wrap_content"
   android:text="تهران" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" />
+ <TextView android:id="@+id/prayer_date" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="۱۴۰۵" android:textColor="#FFFFFF" android:textSize="11sp" />
  <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
   android:text="شیشه‌ای رنگی" android:textColor="#F0ABFC" android:textSize="12sp" />
  <TextView android:id="@+id/prayer_status" android:layout_width="match_parent" android:layout_height="wrap_content"
