@@ -28,6 +28,9 @@ interface AlarmHistoryDao {
         status: String = AlarmHistoryEntity.STATUS_DISMISSED
     ): Int
 
+    @Query("SELECT * FROM alarm_history WHERE startedAtMillis >= :fromMillis AND startedAtMillis < :untilMillis ORDER BY startedAtMillis DESC")
+    fun observeHistoryBetween(fromMillis: Long, untilMillis: Long): Flow<List<AlarmHistoryEntity>>
+
     @Query("SELECT * FROM alarm_history ORDER BY startedAtMillis DESC LIMIT :limit")
     fun observeRecentHistory(limit: Int = 100): Flow<List<AlarmHistoryEntity>>
 

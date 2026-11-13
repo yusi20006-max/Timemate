@@ -46,6 +46,7 @@ import ir.timemate.app.alarm.SnoozePreferences
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.ReminderEntity
 import ir.timemate.app.ui.TimeMateViewModel
+import ir.timemate.app.ui.AlarmStatisticsScreen
 import ir.timemate.app.ui.theme.*
 import ir.timemate.app.util.*
 import ir.timemate.app.widget.BaseMinimalWidgetProvider
@@ -136,8 +137,9 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
                     1 -> AlarmsScreen(alarms, viewModel)
                     2 -> RemindersScreen(reminders, viewModel)
                     3 -> DateConverterScreen()
-                    4 -> WidgetsGalleryScreen()
-                    5 -> SettingsScreen(viewModel, onOpenXiaomiGuide = { showXiaomiGuide = true })
+                    4 -> AlarmStatisticsScreen(viewModel)
+                    5 -> WidgetsGalleryScreen()
+                    6 -> SettingsScreen(viewModel, onOpenXiaomiGuide = { showXiaomiGuide = true })
                 }
             }
         }
@@ -272,8 +274,9 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
         Triple("بیدارباش", Icons.Default.Alarm, 1),
         Triple("یادآورها", Icons.Default.NotificationsActive, 2),
         Triple("مبدل تاریخ", Icons.Default.SwapHoriz, 3),
-        Triple("ویجت‌ها", Icons.Default.Widgets, 4),
-        Triple("تنظیمات", Icons.Default.Settings, 5)
+        Triple("آمار", Icons.Default.BarChart, 4),
+        Triple("ویجت‌ها", Icons.Default.Widgets, 5),
+        Triple("تنظیمات", Icons.Default.Settings, 6)
     )
 
     NavigationBar(

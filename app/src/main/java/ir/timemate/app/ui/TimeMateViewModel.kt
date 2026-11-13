@@ -9,14 +9,19 @@ import ir.timemate.app.alarm.AlarmScheduler
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.HabitEntity
 import ir.timemate.app.data.model.ReminderEntity
+import ir.timemate.app.data.model.AlarmHistoryEntity
 import ir.timemate.app.util.PersianCalendarUtils
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
 
 class TimeMateViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = (application as TimeMateApp).database.dao()
+    private val historyDao = (application as TimeMateApp).database.alarmHistoryDao()
     private val appContext = application.applicationContext
 
     val alarms = dao.getAllAlarms().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -140,6 +145,58 @@ class TimeMateViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+
+    fun observeAlarmHistoryStats(days: Int): Flow<AlarmHistoryStats> {
+        val rangeDays = if (days <= 7) 7 else 30
+        val now = System.currentTimeMillis()
+        val startCalendar = Calendar.getInstance().apply {
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_YEAR, -(rangeDays - 1))
+        }
+        val startMillis = startCalendar.timeInMillis
+        val untilMillis = now + 1L
+
+        return historyDao.observeHistoryBetween(startMillis, untilMillis).map { records ->
+            val completed = records.filter {
+                it.endedAtMillis != null && it.durationMillis != null && it.durationMillis >= 0L
+            }
+            val averageSnoozes = if (records.isEmpty()) 0.0
+                else records.map { it.snoozeCount.coerceAtLeast(0) }.average()
+            val averageDismissMinutes = completed
+                .mapNotNull { it.durationMillis }
+                .takeIf { it.isNotEmpty() }
+                ?.average()
+                ?.div(60_000.0)
+
+            val dailyCounts = (0 until rangeDays).map { offset ->
+                val day = Calendar.getInstance().apply {
+                    timeInMillis = startMillis
+                    add(Calendar.DAY_OF_YEAR, offset)
+                }
+                val dayStart = day.timeInMillis
+                day.add(Calendar.DAY_OF_YEAR, 1)
+                val dayEnd = day.timeInMillis
+                DailyAlarmCount(
+                    dayStartMillis = dayStart,
+                    count = records.count { it.startedAtMillis >= dayStart && it.startedAtMillis < dayEnd }
+                )
+            }
+
+            AlarmHistoryStats(
+                totalAlarms = records.size,
+                averageSnoozes = averageSnoozes,
+                averageDismissMinutes = averageDismissMinutes,
+                completedCount = completed.size,
+                dailyCounts = dailyCounts,
+                records = records
+            )
+        }
+    }
+
     fun exportBackupJson(): String {
         val payload = mapOf(
             "alarms" to alarms.value,
@@ -149,3 +206,17 @@ class TimeMateViewModel(application: Application) : AndroidViewModel(application
         return GsonBuilder().setPrettyPrinting().create().toJson(payload)
     }
 }
+
+data class DailyAlarmCount(
+    val dayStartMillis: Long,
+    val count: Int
+)
+
+data class AlarmHistoryStats(
+    val totalAlarms: Int = 0,
+    val averageSnoozes: Double = 0.0,
+    val averageDismissMinutes: Double? = null,
+    val completedCount: Int = 0,
+    val dailyCounts: List<DailyAlarmCount> = emptyList(),
+    val records: List<AlarmHistoryEntity> = emptyList()
+)
