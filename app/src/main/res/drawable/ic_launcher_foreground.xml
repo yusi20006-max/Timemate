@@ -1,30 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF16DDF7"
-        android:strokeWidth="4.8"
-        android:pathData="M54,18 A36,36 0,1 1,53.9,18" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF9B4DFF"
-        android:strokeWidth="4.8"
-        android:strokeLineCap="round"
-        android:pathData="M79,28 A36,36 0,0 1,87,51" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M27,34 L81,34 L81,45 L60,45 L60,78 L48,78 L48,45 L27,45 Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF18DFF5"
-        android:strokeWidth="3.2"
-        android:strokeLineCap="round"
-        android:pathData="M77,25 L89,17" />
-    <path
-        android:fillColor="#FFFF65E8"
-        android:pathData="M89,17m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <!-- Alarm bells -->
+    <path android:fillColor="#FF55F4E8" android:pathData="M23,25 C17,17 23,10 31,11 C36,12 40,16 41,21 C34,21 28,23 23,25 Z" />
+    <path android:fillColor="#FF167DEB" android:pathData="M85,25 C91,17 85,10 77,11 C72,12 68,16 67,21 C74,21 80,23 85,25 Z" />
+    <path android:strokeColor="#FF00DDE8" android:strokeWidth="3.2" android:strokeLineCap="round" android:pathData="M48,12 L60,12" />
+    <!-- Clock ring -->
+    <path android:fillColor="#00000000" android:strokeWidth="5.6" android:strokeLineCap="round" android:pathData="M54,21 A32,32 0,1 1,53.9,21">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:startX="24" android:startY="22" android:endX="82" android:endY="82" android:type="linear">
+                <item android:offset="0" android:color="#FF8DFFF1" />
+                <item android:offset="0.35" android:color="#FF00DDE8" />
+                <item android:offset="0.68" android:color="#FF167DEB" />
+                <item android:offset="1" android:color="#FF7628FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Orbital sweep -->
+    <path android:fillColor="#00000000" android:strokeColor="#FF00DDE8" android:strokeWidth="2.8" android:strokeLineCap="round" android:pathData="M14,75 C25,57 68,44 91,51 C100,54 94,65 80,74 C61,87 31,94 18,88 C10,84 10,80 14,75" />
+    <!-- Check mark -->
+    <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="5.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M42,53 L52,63 L69,43" />
+    <!-- Sparkles -->
+    <path android:fillColor="#FF42F5ED" android:pathData="M16,39 L18,45 L24,47 L18,49 L16,55 L14,49 L8,47 L14,45 Z" />
+    <path android:fillColor="#FF38DDF4" android:pathData="M91,28 L93,33 L98,35 L93,37 L91,42 L89,37 L84,35 L89,33 Z" />
+    <path android:fillColor="#FF823CFF" android:pathData="M88,83 L90,88 L95,90 L90,92 L88,97 L86,92 L81,90 L86,88 Z" />
 </vector>

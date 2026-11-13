@@ -1,47 +1,209 @@
 <div align="center">
   <img src="assets/timemate-banner.svg" alt="TimeMate — Wake Up Smarter" width="100%" />
+  <br/>
+
+  **دستیار هوشمند بیدارباش و مدیریت عادت‌های روزانه**
+
+  *A smarter way to wake up and organize your day.*
+
+  <p>
+    <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
+    <img src="https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin" />
+    <img src="https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white" alt="Jetpack Compose" />
+    <img src="https://img.shields.io/badge/Calendar-Persian%20(Jalali)-00BFA6" alt="Persian calendar" />
+    <a href="https://github.com/yusi20006-max/Timemate/actions"><img src="https://img.shields.io/github/actions/workflow/status/yusi20006-max/Timemate/build-apk.yml?branch=main&label=CI&logo=github" alt="CI status" /></a>
+  </p>
 </div>
 
-# TimeMate — اپلیکیشن هوشمند ساعت، بیدارباش، یادآور و تقویم شمسی
+---
 
-پروژه کامل اندروید **TimeMate** بر پایه **Kotlin** و **Jetpack Compose** با طراحی شیشه‌ای مدرن (**Glassmorphism**) و رنگ‌بندی مشکی عمیق، آبی لاجوردی و بنفش نئونی.
+## فارسی
+
+**TimeMate** یک اپلیکیشن اندرویدی برای بیدارباش هوشمند، مدیریت یادآورها، پیگیری عادت‌ها و کار با تقویم شمسی است. رابط کاربری با Kotlin و Jetpack Compose ساخته شده و اطلاعات اصلی برنامه به‌صورت محلی روی دستگاه نگهداری می‌شوند.
 
 <div align="center">
-  <img src="assets/timemate-icon.svg" alt="آیکون TimeMate" width="112" />
+  <img src="assets/timemate-icon.svg" alt="نشان برنامه TimeMate" width="116" />
 </div>
 
+### قابلیت‌ها
+
+| قابلیت | توضیح |
+|---|---|
+| ⏰ بیدارباش هوشمند | زمان‌بندی زنگ، نمایش تمام‌صفحه هنگام زنگ و بازیابی زمان‌بندی پس از راه‌اندازی مجدد دستگاه |
+| 🔁 چرت قابل تنظیم | انتخاب فاصله Snooze، حفظ وضعیت جلسه و هشدار پس از چند بار چرت |
+| 📊 تاریخچه و آمار | ثبت جلسات بیدارباش، تعداد چرت‌ها و نمایش روندهای آماری |
+| 🗓️ تقویم شمسی | محاسبات تاریخ جلالی به‌صورت آفلاین |
+| ✅ یادآورها و عادت‌ها | مدیریت کارها، اولویت‌بندی و پیگیری زنجیره عادت‌ها |
+| 🎨 سه تم رنگی | انتخاب تم و ذخیره دائمی آن با DataStore |
+| 💾 پشتیبان‌گیری | خروجی پشتیبان محلی JSON برای داده‌های پشتیبانی‌شده |
+
+### تجربه بصری برنامه
+
+TimeMate با رابط کاربری تیره و سه تم قابل انتخاب طراحی شده است. تصاویر زیر باید از نسخه واقعی برنامه و پس از ثبت اسکرین‌شات روی دستگاه تهیه شوند؛ از تصویرسازی غیرواقعی به‌عنوان اسکرین‌شات محصول استفاده نمی‌کنیم.
+
+| صفحه | محتوای قابل مشاهده |
+|---|---|
+| داشبورد | نمای کلی زنگ‌ها، یادآورها و عادت‌ها |
+| تنظیم زنگ | زمان‌بندی و تنظیمات Snooze |
+| آمار | تاریخچه جلسات و روندهای بیدارباش |
+| تنظیمات | انتخاب تم و راهنمای سازنده گوشی |
+
+### سه تم برنامه
+
+<div align="center">
+  <img src="assets/theme-previews.svg" alt="پیش‌نمایش سه تم TimeMate" width="100%" />
+</div>
+
+- **Deep Ocean:** آبی لاجوردی و بنفش نئونی
+- **Midnight Rose:** قرمز تیره و صورتی نئونی
+- **Forest Night:** سبز زمردی و فیروزه‌ای
+
+### قابلیت‌های شاخص
+
+- **Smart Alarm:** زمان‌بندی دقیق و تجربه تمام‌صفحه زنگ
+- **Snooze Control:** فاصله چرت قابل تنظیم و مدیریت جلسه
+- **Sleep Statistics:** تاریخچه و تحلیل روند بیدارباش
+- **Persian Calendar:** تاریخ شمسی و نمایش ارقام فارسی
+- **Personalization:** سه تم رنگی و تنظیمات ذخیره‌شونده
+
+### سازگاری دستگاه‌ها
+
+| سازنده | وضعیت راهنمای راه‌اندازی |
+|---|---|
+| Xiaomi / Redmi / POCO | راهنمای MIUI و HyperOS موجود |
+| Samsung | راهنمای اختصاصی One UI در برنامه‌ریزی |
+| سایر دستگاه‌های Android | راهنمای عمومی در برنامه‌ریزی |
+
+### راهنمای نصب تصویری
+
+1. دریافت APK از [GitHub Actions](https://github.com/yusi20006-max/Timemate/actions) یا بخش Releases.
+2. استخراج فایل APK از آرشیو دانلودشده.
+3. بازکردن APK و تأیید نصب از منبع مورد اعتماد.
+4. اجرای TimeMate و تکمیل راهنمای مجوزهای متناسب با دستگاه.
+
+> تصاویر واقعی مراحل نصب و صفحات برنامه پس از ثبت از نسخه نهایی به این بخش افزوده می‌شوند.
+
+### سازگاری و راه‌اندازی اولیه
+
+راهنمای فعلی MIUI/HyperOS برای گوشی‌های Xiaomi، Redmi و POCO در دسترس است. راهنمای اختصاصی Samsung One UI و راهنمای عمومی سایر سازندگان در حال توسعه است تا مراحل مجوزها و تنظیمات پس‌زمینه بر اساس نوع گوشی نمایش داده شوند.
+
+> نام گزینه‌ها و مسیر تنظیمات ممکن است با نسخه Android و رابط سازنده تغییر کند. برای عملکرد قابل‌اعتماد زنگ، مجوزهای درخواستی برنامه را بررسی کنید.
+
+### قابلیت‌های در دست توسعه
+
+- [اوقات شرعی بر اساس داده‌های منتشرشده دانشگاه تهران](https://github.com/yusi20006-max/Timemate/issues/15) — پس از راستی‌آزمایی منبع رسمی و تطبیق زمان‌ها.
+- [راهنمای اختصاصی Samsung و سایر سازندگان](https://github.com/yusi20006-max/Timemate/issues/13).
+
+### دریافت و نصب
+
+1. وارد بخش [Releases](https://github.com/yusi20006-max/Timemate/releases) شوید؛ اگر نسخه‌ای منتشر نشده، از بخش [Actions](https://github.com/yusi20006-max/Timemate/actions) آخرین اجرای موفق را باز کنید.
+2. فایل APK را از بخش **Artifacts** دانلود و از ZIP استخراج کنید.
+3. APK را روی دستگاه Android نصب کنید.
+
+**توجه:** خروجی Release فعلی در CI بدون کلید اختصاصی ناشر ساخته می‌شود و برای انتشار عمومی نهایی باید با کلید معتبر امضا شود.
+
+### ساخت پروژه
+
+پروژه را در Android Studio باز کنید و از مسیر زیر APK بسازید:
+
+`Build > Build Bundle(s) / APK(s) > Build APK(s)`
+
+ساخت خودکار Debug و Release APK نیز از طریق GitHub Actions پیکربندی شده است.
+
 ---
 
-## ویژگی‌های پیاده‌سازی‌شده در کد
+## English
 
-1. **بیدارباش ضد توقف (مخصوص Redmi Note 12 / MIUI / HyperOS):**
-   - زمان‌بندی با `AlarmManager.setAlarmClock` (بالاترین سطح اولویت در هسته اندروید که حتی در حالت Doze عمیق دستگاه را بیدار می‌کند).
-   - سرویس پیش‌زمینه (`AlarmService`) با نوع `mediaPlayback` و `WakeLock` سخت‌افزاری.
-   - افزایش تدریجی صدای زنگ (`Gradual Volume`) و لرزش همزمان.
-   - باز شدن خودکار صفحه بیدارباش روی قفل صفحه (`AlarmRingActivity`).
-   - بازیابی تمام زنگ‌ها و یادآورها بلافاصله پس از خاموش و روشن شدن گوشی (`BootReceiver`).
+**TimeMate** is an Android app for smarter alarms, reminders, habit tracking, and the Persian (Jalali) calendar. It is built with Kotlin and Jetpack Compose, with core app data stored locally on the device.
 
-2. **تقویم ۱۰۰٪ آفلاین شمسی (جلالی):**
-   - موتور محاسباتی دقیق تقویم شمسی و سال کبیسه بدون وابستگی به اینترنت (`PersianCalendarUtils.kt`).
+### Highlights
 
-3. **یادآور هوشمند و پیگیری عادت‌ها:**
-   - اولویت‌بندی (فوری، مهم، عادی)، نمایش کارهای عقب‌افتاده در داشبورد، و تکرار خودکار کارهای انجام‌نشده.
-   - ثبت زنجیره عادت‌های روزانه (Streak) و خروجی پشتیبان آفلاین JSON.
+- **Smart alarms:** scheduled alarms, a full-screen ringing experience, and reboot recovery.
+- **Configurable snooze:** choose snooze intervals and keep session state.
+- **Alarm history & statistics:** review completed alarm sessions and usage trends.
+- **Offline Jalali calendar:** Persian date calculations without a network dependency.
+- **Reminders & habits:** organize tasks, set priorities, and track daily streaks.
+- **Three persistent themes:** switch between color palettes, saved with DataStore.
+- **Local backup:** JSON export for supported app data.
 
-4. **تاریخچه بیدارباش:**
-   - ثبت زمان برنامه‌ریزی‌شده، شروع واقعی، دفعات چرت و زمان خاموش‌شدن هر جلسه.
-   - نگهداری تاریخچه به‌صورت محلی با Room و مهاجرت غیرمخرب پایگاه داده.
+### Visual tour
+
+TimeMate uses a dark interface with three selectable themes. Product screenshots should be captured from the actual app build; illustrative artwork is not presented as a real app screenshot.
+
+| Screen | What it shows |
+|---|---|
+| Dashboard | Alarms, reminders, and habits overview |
+| Alarm setup | Scheduling and snooze configuration |
+| Statistics | Alarm history and wake-up trends |
+| Settings | Theme selection and device setup guide |
+
+### Three app themes
+
+<div align="center">
+  <img src="assets/theme-previews.svg" alt="TimeMate theme previews" width="100%" />
+</div>
+
+- **Deep Ocean:** Azure blue and neon purple
+- **Midnight Rose:** Deep red and neon pink
+- **Forest Night:** Emerald green and turquoise
+
+### Feature highlights
+
+- **Smart Alarm:** reliable scheduling and a full-screen ringing experience
+- **Snooze Control:** configurable intervals and session tracking
+- **Sleep Statistics:** alarm history and wake-up trend analysis
+- **Persian Calendar:** Jalali dates and Persian numeral support
+- **Personalization:** three persistent color themes
+
+### Device compatibility
+
+| Device family | Setup guidance |
+|---|---|
+| Xiaomi / Redmi / POCO | MIUI and HyperOS guidance available |
+| Samsung | Dedicated One UI guidance planned |
+| Other Android devices | Generic Android guidance planned |
+
+### Installation guide
+
+1. Download an APK from [GitHub Actions](https://github.com/yusi20006-max/Timemate/actions) or Releases.
+2. Extract the APK from the downloaded archive.
+3. Open the APK and approve installation from a trusted source.
+4. Launch TimeMate and follow the device-specific permission guide.
+
+> Actual app and installation screenshots will be added after being captured from the final build.
+
+### Build
+
+Open the project in Android Studio and select:
+
+`Build > Build Bundle(s) / APK(s) > Build APK(s)`
+
+GitHub Actions also builds Debug and Release APK artifacts. The current Release artifact is unsigned with a project-specific signing key and must be signed before public distribution.
 
 ---
 
-## راهنمای ساخت فایل نصبی (APK)
+## فناوری‌ها | Tech Stack
 
-### روش اول: در Android Studio
-1. فایل زیپ را استخراج (Extract) کنید.
-2. پوشه `TimeMate` را در **Android Studio** باز کنید.
-3. از منوی **Build > Build Bundle(s) / APK(s) > Build APK(s)** فایل نصبی را تولید کنید.
+- Kotlin
+- Jetpack Compose
+- Material 3
+- Room
+- Preferences DataStore
+- AlarmManager
+- GitHub Actions
 
-### روش دوم: ساخت خودکار ابری در GitHub Actions (مناسب کار با موبایل / Termux)
-فایل `.github/workflows/build-apk.yml` از پیش داخل پروژه قرار داده شده است:
-1. کدهای این پوشه را در یک مخزن (Repository) گیت‌هاب Push کنید.
-2. وارد تب **Actions** در گیت‌هاب شوید؛ بیلد به صورت خودکار اجرا شده و فایل‌های **Debug APK** و **Release APK** را به‌صورت Artifact با نگهداری ۳۰روزه آماده دانلود می‌کند. برای نسخه قابل انتشار، فایل `app-release-unsigned.apk` را دریافت کنید؛ این خروجی برای نصب عمومی نهایی به امضای اختصاصی ناشر نیاز دارد.
+## مشارکت | Contributing
+
+برای گزارش خطا یا پیشنهاد قابلیت، از بخش [Issues](https://github.com/yusi20006-max/Timemate/issues) استفاده کنید. لطفاً مراحل بازتولید خطا، نسخه Android و مدل دستگاه را بنویسید.
+
+For bug reports and feature requests, please open a [GitHub Issue](https://github.com/yusi20006-max/Timemate/issues) and include reproduction steps, Android version, and device model.
+
+---
+
+<div align="center">
+
+**TimeMate — Wake Up Smarter.**
+
+ساخته‌شده برای شروع بهتر هر روز.
+
+</div>
