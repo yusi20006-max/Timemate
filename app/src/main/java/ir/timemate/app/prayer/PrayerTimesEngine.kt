@@ -76,5 +76,5 @@ object PrayerTimesEngine {
     )
 
     private fun String.mapDigitsToPersian(): String =
-        map { if (it in '0'..'9') ('۰'.code + (it.code - '0'.code)).toChar() else it }
+        map { if (it in '0'..'9') ('۰'.code + (it.code - '0'.code)).toChar() else it }.joinToString("")
 }
