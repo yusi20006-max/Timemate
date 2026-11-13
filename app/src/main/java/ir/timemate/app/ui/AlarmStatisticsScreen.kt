@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,13 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import ir.timemate.app.data.model.AlarmHistoryEntity
-import ir.timemate.app.ui.theme.CoolSilver
-import ir.timemate.app.ui.theme.EmeraldSuccess
-import ir.timemate.app.ui.theme.GlassBorder
-import ir.timemate.app.ui.theme.IceWhite
-import ir.timemate.app.ui.theme.NeonViolet
-import ir.timemate.app.ui.theme.RoyalAzure
-import ir.timemate.app.ui.theme.SoftPurple
 import ir.timemate.app.ui.theme.GlassCard
 import ir.timemate.app.util.PersianCalendarUtils
 import ir.timemate.app.util.toPersianDigits
@@ -59,8 +53,8 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text("آمار و تحلیل بیدارباش", color = IceWhite, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("بر پایه تاریخچه ثبت‌شده روی دستگاه؛ بدون تحلیل یا تشخیص پزشکی خواب", color = CoolSilver, fontSize = 12.sp)
+                Text("آمار و تحلیل بیدارباش", color = MaterialTheme.colorScheme.onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text("بر پایه تاریخچه ثبت‌شده روی دستگاه؛ بدون تحلیل یا تشخیص پزشکی خواب", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
         item {
@@ -83,45 +77,45 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
                     modifier = Modifier.weight(1f),
                     title = "تعداد بیدارباش",
                     value = toPersianDigits(stats.totalAlarms.toString()),
-                    icon = { Icon(Icons.Default.History, contentDescription = null, tint = SoftPurple) }
+                    icon = { Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary) }
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     title = "میانگین چرت",
                     value = toPersianDigits("%.1f".format(stats.averageSnoozes)),
-                    icon = { Icon(Icons.Default.Snooze, contentDescription = null, tint = SoftPurple) }
+                    icon = { Icon(Icons.Default.Snooze, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary) }
                 )
             }
         }
         item {
-            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = RoyalAzure.copy(alpha = 0.5f)) {
+            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("میانگین زمان تا خاموشی", color = CoolSilver, fontSize = 12.sp)
+                    Text("میانگین زمان تا خاموشی", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(
                         text = stats.averageDismissMinutes?.let {
                             "${toPersianDigits(it.roundToInt().toString())} دقیقه"
                         } ?: "هنوز داده کافی نیست",
-                        color = IceWhite,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "بر اساس ${toPersianDigits(stats.completedCount.toString())} جلسه تکمیل‌شده",
-                        color = CoolSilver,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
             }
         }
         item {
-            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = NeonViolet.copy(alpha = 0.55f)) {
+            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.55f)) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.BarChart, contentDescription = null, tint = SoftPurple, modifier = Modifier.size(19.dp))
-                        Text("روند روزانه بیدارباش", color = IceWhite, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
+                        Icon(Icons.Default.BarChart, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(19.dp))
+                        Text("روند روزانه بیدارباش", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
                     }
                     if (stats.totalAlarms == 0) {
-                        Text("در این بازه هنوز بیدارباشی ثبت نشده است.", color = CoolSilver, fontSize = 12.sp)
+                        Text("در این بازه هنوز بیدارباشی ثبت نشده است.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     } else {
                         val maxCount = (stats.dailyCounts.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
                         Row(
@@ -137,7 +131,7 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
                                 ) {
                                     Text(
                                         text = if (day.count > 0) toPersianDigits(day.count.toString()) else "",
-                                        color = CoolSilver,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 8.sp,
                                         maxLines = 1
                                     )
@@ -147,13 +141,13 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
                                             .fillMaxWidth()
                                             .height(if (day.count == 0) 3.dp else (62f * day.count / maxCount).coerceAtLeast(6f).dp)
                                             .clip(RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
-                                            .background(if (day.count == 0) GlassBorder else RoyalAzure)
+                                            .background(if (day.count == 0) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.primary)
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     if (selectedDays == 7 || index % 5 == 0 || index == stats.dailyCounts.lastIndex) {
                                         Text(
                                             text = toPersianDigits(Calendar.getInstance().apply { timeInMillis = day.dayStartMillis }.get(Calendar.DAY_OF_MONTH).toString()),
-                                            color = CoolSilver,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 8.sp,
                                             maxLines = 1
                                         )
@@ -166,7 +160,7 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
             }
         }
         item {
-            Text("سوابق بیدارباش", color = IceWhite, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            Text("سوابق بیدارباش", color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp, fontWeight = FontWeight.Bold)
         }
         if (stats.records.isEmpty()) {
             item {
@@ -176,9 +170,9 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.History, contentDescription = null, tint = CoolSilver, modifier = Modifier.size(34.dp))
-                        Text("هنوز سابقه‌ای ثبت نشده است", color = IceWhite, fontWeight = FontWeight.SemiBold)
-                        Text("پس از اولین بیدارباش، گزارش آن در این بخش نمایش داده می‌شود.", color = CoolSilver, fontSize = 12.sp)
+                        Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(34.dp))
+                        Text("هنوز سابقه‌ای ثبت نشده است", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                        Text("پس از اولین بیدارباش، گزارش آن در این بخش نمایش داده می‌شود.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
             }
@@ -190,7 +184,7 @@ fun AlarmStatisticsScreen(viewModel: TimeMateViewModel) {
         item {
             Text(
                 "این آمار فقط رفتار ثبت‌شده بیدارباش را توصیف می‌کند و معیاری برای کیفیت یا مراحل خواب نیست.",
-                color = CoolSilver,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -205,11 +199,11 @@ private fun StatCard(
     value: String,
     icon: @Composable () -> Unit
 ) {
-    GlassCard(modifier = modifier, borderColor = GlassBorder) {
+    GlassCard(modifier = modifier, borderColor = MaterialTheme.colorScheme.outlineVariant) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             icon()
-            Text(title, color = CoolSilver, fontSize = 11.sp)
-            Text(value, color = IceWhite, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Text(value, color = MaterialTheme.colorScheme.onSurface, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -223,27 +217,27 @@ private fun AlarmHistoryCard(record: AlarmHistoryEntity) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(formatPersianDate(record.startedAtMillis), color = IceWhite, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                Text(formatPersianDate(record.startedAtMillis), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Text(
                     if (record.endedAtMillis == null) "فعال / ناقص" else "تکمیل‌شده",
-                    color = if (record.endedAtMillis == null) SoftPurple else EmeraldSuccess,
+                    color = if (record.endedAtMillis == null) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiary,
                     fontSize = 10.sp
                 )
             }
             Text(
                 "زمان برنامه‌ریزی‌شده: ${formatTime(record.scheduledAtMillis)}",
-                color = CoolSilver,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
             Text(
                 "شروع: ${formatTime(record.startedAtMillis)}  •  خاموشی: ${record.endedAtMillis?.let(::formatTime) ?: "ثبت نشده"}",
-                color = CoolSilver,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("چرت: ${toPersianDigits(record.snoozeCount.coerceAtLeast(0).toString())} بار", color = SoftPurple, fontSize = 11.sp)
+                Text("چرت: ${toPersianDigits(record.snoozeCount.coerceAtLeast(0).toString())} بار", color = MaterialTheme.colorScheme.tertiary, fontSize = 11.sp)
                 record.durationMillis?.let {
-                    Text("مدت: ${toPersianDigits((it / 60_000L).toString())} دقیقه", color = CoolSilver, fontSize = 11.sp)
+                    Text("مدت: ${toPersianDigits((it / 60_000L).toString())} دقیقه", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 }
             }
         }
