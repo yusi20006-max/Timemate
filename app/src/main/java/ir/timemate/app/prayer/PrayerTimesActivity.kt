@@ -18,6 +18,7 @@ import ir.timemate.app.ui.theme.TimeMateTheme
 import ir.timemate.app.widget.*
 import ir.timemate.app.util.PersianCalendarUtils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -38,7 +39,12 @@ fun PrayerTimesScreen() {
     val city = PrayerCities.provincialCapitals.firstOrNull { it.id == cityId } ?: PrayerCities.provincialCapitals.first()
     val zone = remember(city.timeZoneId) { runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran")) }
     val cache = remember(context) { PrayerTimesCache(context) }
+    val repository = remember(context) { OfficialPrayerTimesRepository(context) }
+    val scope = rememberCoroutineScope()
     var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var refreshVersion by remember { mutableIntStateOf(0) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var refreshMessage by remember { mutableStateOf("در حال بررسی داده رسمی دانشگاه تهران…") }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -49,12 +55,41 @@ fun PrayerTimesScreen() {
 
     val now = remember(nowMillis, zone) { ZonedDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), zone) }
     val today = now.toLocalDate()
-    val cached = remember(city.id, today.toString(), nowMillis / 60_000) { cache.get(city, today.toString()) }
-    val tomorrow = remember(city.id, today.toString(), nowMillis / 60_000) {
+
+    LaunchedEffect(city.id, today.toString()) {
+        isRefreshing = true
+        val success = repository.refreshYear(city)
+        refreshVersion++
+        isRefreshing = false
+        refreshMessage = if (success) {
+            "داده رسمی سال ۱۴۰۵ دریافت یا از حافظه معتبر بازیابی شد."
+        } else {
+            "دریافت تازه ممکن نشد؛ در صورت وجود، آخرین داده معتبر ذخیره‌شده نمایش داده می‌شود."
+        }
+        BasePrayerTimesWidgetProvider.updateAll(context)
+    }
+
+    val cached = remember(city.id, today.toString(), refreshVersion, nowMillis / 60_000) {
+        cache.get(city, today.toString())
+    }
+    val tomorrow = remember(city.id, today.toString(), refreshVersion, nowMillis / 60_000) {
         cache.get(city, today.plusDays(1).toString())?.day
     }
     val next = remember(cached, tomorrow, nowMillis) {
         cached?.let { PrayerTimesEngine.nextPrayer(it.day, tomorrow, now) }
+    }
+
+    fun refreshNow() {
+        scope.launch {
+            isRefreshing = true
+            refreshMessage = "در حال دریافت فایل رسمی دانشگاه تهران…"
+            val success = repository.refreshYear(city, force = true)
+            refreshVersion++
+            isRefreshing = false
+            refreshMessage = if (success) "داده رسمی با موفقیت دریافت و اعتبارسنجی شد."
+            else "دریافت یا اعتبارسنجی فایل رسمی ناموفق بود؛ داده قبلی حفظ شد."
+            BasePrayerTimesWidgetProvider.updateAll(context)
+        }
     }
 
     LazyColumn(
@@ -90,11 +125,15 @@ fun PrayerTimesScreen() {
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(refreshMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = { refreshNow() }, enabled = !isRefreshing) {
+                        Text(if (isRefreshing) "در حال دریافت…" else "به‌روزرسانی از دانشگاه تهران")
+                    }
                     if (cached == null) {
-                        Text("داده رسمی فعلاً در دسترس نیست", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
-                        Text("برای این شهر و تاریخ، داده معتبر دانشگاه تهران دریافت یا در حافظه ذخیره نشده است.")
+                        Text("داده رسمی برای این شهر و تاریخ در دسترس نیست", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+                        Text("در صورت نبود اینترنت یا فایل معتبر، هیچ زمان محاسباتی یا داده ثالث جایگزین نمی‌شود.")
                     } else {
-                        Text("داده ذخیره‌شده آفلاین", style = MaterialTheme.typography.titleMedium)
+                        Text("داده رسمی ذخیره‌شده", style = MaterialTheme.typography.titleMedium)
                         Text("آخرین دریافت: ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(cached.fetchedAtMillis))}")
                         if (next != null) {
                             Text("وقت بعدی: ${next.event.label}، ساعت ${next.at.toLocalTime()}", style = MaterialTheme.typography.titleLarge)
@@ -111,8 +150,7 @@ fun PrayerTimesScreen() {
                             "نیمه‌شب شرعی" to cached.day.midnight
                         ).forEach { (label, time) -> Text("$label: $time") }
                     }
-                    Text("هیچ زمان محاسباتی یا داده‌ای از سرویس ثالث جایگزین منبع دانشگاه تهران نمی‌شود.")
-                    Text("مرجع رسمی: ${PrayerTimesSource.OFFICIAL_PAGE}", color = MaterialTheme.colorScheme.primary)
+                    Text("منبع: فایل PDF رسمی مرکز تقویم دانشگاه تهران", color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
