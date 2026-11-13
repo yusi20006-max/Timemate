@@ -50,6 +50,9 @@ object SnoozeSessionStore {
         isGradual: Boolean,
         ringtoneUri: String?
     ): SnoozeSession {
+        load(context, alarmId)?.let { previous ->
+            AlarmScheduler.cancelSnooze(context, alarmId, previous.sessionId)
+        }
         val session = SnoozeSession(
             alarmId = alarmId,
             sessionId = UUID.randomUUID().toString(),
