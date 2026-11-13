@@ -45,6 +45,7 @@ import ir.timemate.app.alarm.HourlyChimeSynthesizer
 import ir.timemate.app.alarm.SnoozePreferences
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.ReminderEntity
+import ir.timemate.app.prayer.PrayerTimesScreen
 import ir.timemate.app.ui.TimeMateViewModel
 import ir.timemate.app.ui.AlarmStatisticsScreen
 import ir.timemate.app.ui.theme.*
@@ -162,7 +163,8 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                     3 -> DateConverterScreen()
                     4 -> AlarmStatisticsScreen(viewModel)
                     5 -> WidgetsGalleryScreen()
-                    6 -> SettingsScreen(
+                    6 -> PrayerTimesScreen()
+                    7 -> SettingsScreen(
                         viewModel, selectedTheme,
                         onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },
                         deviceManufacturer = devicePreferences?.manufacturer,
@@ -344,7 +346,8 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
         Triple("مبدل تاریخ", Icons.Default.SwapHoriz, 3),
         Triple("آمار", Icons.Default.BarChart, 4),
         Triple("ویجت‌ها", Icons.Default.Widgets, 5),
-        Triple("تنظیمات", Icons.Default.Settings, 6)
+        Triple("اوقات شرعی", Icons.Default.AccessTime, 6),
+        Triple("تنظیمات", Icons.Default.Settings, 7)
     )
 
     NavigationBar(

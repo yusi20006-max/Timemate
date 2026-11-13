@@ -39,6 +39,11 @@
         </activity>
 
         <activity
+            android:name=".prayer.PrayerTimesActivity"
+            android:exported="false"
+            android:label="اوقات شرعی" />
+
+        <activity
             android:name=".alarm.AlarmRingActivity"
             android:exported="false"
             android:launchMode="singleInstance"
@@ -134,5 +139,30 @@
                 android:resource="@xml/widget_info_4" />
         </receiver>
 
+
+        <receiver android:name=".widget.PrayerWidgetClassicProvider" android:exported="true" android:label="اوقات شرعی — ClassicProvider">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_classic_info" />
+        </receiver>
+
+        <receiver android:name=".widget.PrayerWidgetBrightProvider" android:exported="true" android:label="اوقات شرعی — BrightProvider">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_bright_info" />
+        </receiver>
+
+        <receiver android:name=".widget.PrayerWidgetMinimalProvider" android:exported="true" android:label="اوقات شرعی — MinimalProvider">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_minimal_info" />
+        </receiver>
+
+        <receiver android:name=".widget.PrayerWidgetGlassProvider" android:exported="true" android:label="اوقات شرعی — GlassProvider">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_glass_info" />
+        </receiver>
+
+        <receiver android:name=".widget.PrayerWidgetPersianProvider" android:exported="true" android:label="اوقات شرعی — PersianProvider">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_persian_info" />
+        </receiver>
     </application>
 </manifest>
