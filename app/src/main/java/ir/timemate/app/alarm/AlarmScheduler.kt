@@ -9,6 +9,7 @@ import ir.timemate.app.MainActivity
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.ReminderEntity
 import java.util.Calendar
+import java.util.UUID
 
 object AlarmScheduler {
 
@@ -84,6 +85,7 @@ object AlarmScheduler {
         }
 
         val triggerTime = computeNextAlarmTriggerMillis(alarm.hour, alarm.minute, alarm.daysOfWeek)
+        val sessionId = UUID.randomUUID().toString()
 
         val triggerIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_TRIGGER_ALARM
@@ -94,6 +96,8 @@ object AlarmScheduler {
             putExtra(AlarmReceiver.EXTRA_RINGTONE_URI, alarm.ringtoneUri)
             putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, SnoozePreferences.getMinutes(context))
             putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, false)
+            putExtra(AlarmReceiver.EXTRA_SESSION_ID, sessionId)
+            putExtra(AlarmReceiver.EXTRA_SCHEDULED_AT, triggerTime)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -164,6 +168,8 @@ object AlarmScheduler {
             putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
             putExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID, sessionId)
             putExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, snoozeCount)
+            putExtra(AlarmReceiver.EXTRA_SESSION_ID, sessionId)
+            putExtra(AlarmReceiver.EXTRA_SCHEDULED_AT, triggerTime)
         }
 
         val requestCode = SNOOZE_REQUEST_CODE_BASE + alarmId
