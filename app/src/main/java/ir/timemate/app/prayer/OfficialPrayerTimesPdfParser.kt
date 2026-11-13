@@ -2,7 +2,8 @@ package ir.timemate.app.prayer
 
 import ir.timemate.app.util.JalaliDate
 import ir.timemate.app.util.PersianCalendarUtils
-import java.util.Locale\nimport java.time.LocalDate
+import java.time.LocalDate
+import java.util.Locale
 
 /**
  * Parses the official 1405 city PDF text. Column order in the source PDF is:
@@ -59,7 +60,12 @@ object OfficialPrayerTimesPdfParser {
 
         val months = (1..12).all { month -> parsed.keys.any { it.first == month && it.second == 1 } }
         if (!months || parsed.size !in 365..366) return emptyList()
-        return parsed.entries.sortedWith(compareBy({ it.key.first }, { it.key.second })).map { it.value }
+        val ordered = parsed.entries
+            .sortedWith(compareBy({ it.key.first }, { it.key.second }))
+            .map { it.value }
+        val dates = ordered.mapNotNull { runCatching { LocalDate.parse(it.dateIso) }.getOrNull() }
+        if (dates.size != ordered.size || dates.zipWithNext().any { (a, b) -> b != a.plusDays(1) }) return emptyList()
+        return ordered
     }
 
     private fun normalize(value: String): String = value
