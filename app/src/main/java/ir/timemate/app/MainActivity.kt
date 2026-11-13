@@ -186,7 +186,13 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                     showDeviceGuide = true
                 }
             },
-            onDismiss = { showManufacturerPicker = false }
+            onDismiss = {
+                themeScope.launch {
+                    DeviceSetupDataStore.setManufacturer(context, DeviceSetupManufacturer.OTHER)
+                    DeviceSetupDataStore.markGuideCompleted(context)
+                    showManufacturerPicker = false
+                }
+            }
         )
     }
 
