@@ -101,6 +101,7 @@ private fun RequestNotificationPermissionIfNeeded() {
 @Composable
 fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     val context = LocalContext.current
+    val themeScope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
     var showXiaomiGuide by remember { mutableStateOf(false) }
     val alarms by viewModel.alarms.collectAsState()
@@ -151,7 +152,11 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                     3 -> DateConverterScreen()
                     4 -> AlarmStatisticsScreen(viewModel)
                     5 -> WidgetsGalleryScreen()
-                    6 -> SettingsScreen(\n                        viewModel, selectedTheme,\n                        onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },\n                        onOpenXiaomiGuide = { showXiaomiGuide = true }\n                    )
+                    6 -> SettingsScreen(
+                        viewModel, selectedTheme,
+                        onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },
+                        onOpenXiaomiGuide = { showXiaomiGuide = true }
+                    )
                 }
             }
         }
@@ -1662,7 +1667,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("ظاهر و رنگ‌بندی برنامه", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
                     Text("یکی از سه تم را انتخاب کنید؛ انتخاب شما به‌صورت خودکار ذخیره می‌شود.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    AppTheme.entries.forEach { theme ->
+                    AppTheme.values().forEach { theme ->
                         val swatches = when (theme) {
                             AppTheme.DEEP_OCEAN -> listOf(Color(0xFF397BFF), Color(0xFF9B65FF), Color(0xFF10182B))
                             AppTheme.MIDNIGHT_ROSE -> listOf(Color(0xFFE54869), Color(0xFFFF65A8), Color(0xFF21121C))
