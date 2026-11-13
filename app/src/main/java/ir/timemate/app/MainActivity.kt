@@ -1639,7 +1639,12 @@ fun AddReminderDialog(
 // 5. SETTINGS & HOURLY CHIME + XIAOMI MIUI RELIABILITY GUARD
 // ==========================================
 @Composable
-fun SettingsScreen(\n    viewModel: TimeMateViewModel,\n    selectedTheme: AppTheme,\n    onThemeSelected: (AppTheme) -> Unit,\n    onOpenXiaomiGuide: () -> Unit = {}\n) {
+fun SettingsScreen(
+    viewModel: TimeMateViewModel,
+    selectedTheme: AppTheme,
+    onThemeSelected: (AppTheme) -> Unit,
+    onOpenXiaomiGuide: () -> Unit = {}
+) {
     val context = LocalContext.current
     var isChimeEnabled by remember {
         mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
@@ -1652,6 +1657,41 @@ fun SettingsScreen(\n    viewModel: TimeMateViewModel,\n    selectedTheme: AppTh
         verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(vertical = 16.dp)
     ) {
+        item {
+            GlassCard(modifier = Modifier.fillMaxWidth(), borderColor = MaterialTheme.colorScheme.secondary) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("ظاهر و رنگ‌بندی برنامه", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
+                    Text("یکی از سه تم را انتخاب کنید؛ انتخاب شما به‌صورت خودکار ذخیره می‌شود.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    AppTheme.entries.forEach { theme ->
+                        val swatches = when (theme) {
+                            AppTheme.DEEP_OCEAN -> listOf(Color(0xFF397BFF), Color(0xFF9B65FF), Color(0xFF10182B))
+                            AppTheme.MIDNIGHT_ROSE -> listOf(Color(0xFFE54869), Color(0xFFFF65A8), Color(0xFF21121C))
+                            AppTheme.FOREST_NIGHT -> listOf(Color(0xFF16A875), Color(0xFF20C9B0), Color(0xFF10221C))
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (selectedTheme == theme) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent)
+                                .border(if (selectedTheme == theme) 1.5.dp else 1.dp, if (selectedTheme == theme) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+                                .clickable { onThemeSelected(theme) }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                swatches.forEach { color -> Box(Modifier.size(22.dp).clip(CircleShape).background(color)) }
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(theme.displayName, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                                Text(theme.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            }
+                            RadioButton(selected = selectedTheme == theme, onClick = { onThemeSelected(theme) })
+                        }
+                    }
+                }
+            }
+        }
+
         item {
             Text(
                 text = "تنظیمات و پایداری سیستم",
