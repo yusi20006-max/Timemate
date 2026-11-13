@@ -39,11 +39,16 @@ class OfficialPrayerTimesRepository(context: Context) {
             }
 
             PDFBoxResourceLoader.init(appContext)
-            val extractedText = PDDocument.load(ByteArrayInputStream(bytes)).use { document ->
-                require(document.numberOfPages in 10..14) { "تعداد صفحات فایل رسمی غیرمنتظره است." }
-                PDFTextStripper().getText(document)
+            val pageTexts = PDDocument.load(ByteArrayInputStream(bytes)).use { document ->
+                require(document.numberOfPages == 12) { "فایل رسمی باید دقیقاً ۱۲ صفحه ماهانه داشته باشد." }
+                (1..document.numberOfPages).map { page ->
+                    PDFTextStripper().apply {
+                        startPage = page
+                        endPage = page
+                    }.getText(document)
+                }
             }
-            val days = OfficialPrayerTimesPdfParser.parseText(extractedText, city, pdfUrl)
+            val days = OfficialPrayerTimesPdfParser.parsePages(pageTexts, city, pdfUrl)
             require(days.size in 365..366) { "پوشش کامل سال ۱۴۰۵ از فایل رسمی استخراج نشد." }
             require(cache.saveAll(days)) { "ذخیره داده رسمی در حافظه ناموفق بود." }
             true
