@@ -86,9 +86,20 @@ private fun RequestNotificationPermissionIfNeeded() {
 
 @Composable
 fun TimeMateMainApp(viewModel: TimeMateViewModel) {
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showXiaomiGuide by remember { mutableStateOf(false) }
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
+
+    LaunchedEffect(Unit) {
+        val preferences = context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
+        if (XiaomiPermissionHelper.isXiaomiDevice() &&
+            !preferences.getBoolean(XIAOMI_GUIDE_SEEN_KEY, false)
+        ) {
+            showXiaomiGuide = true
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -125,11 +136,132 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
                     2 -> RemindersScreen(reminders, viewModel)
                     3 -> DateConverterScreen()
                     4 -> WidgetsGalleryScreen()
-                    5 -> SettingsScreen(viewModel)
+                    5 -> SettingsScreen(viewModel, onOpenXiaomiGuide = { showXiaomiGuide = true })
                 }
             }
         }
     }
+
+    if (showXiaomiGuide) {
+        XiaomiFirstRunGuideDialog(
+            onDismiss = {
+                context.getSharedPreferences(XIAOMI_GUIDE_PREFERENCES, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(XIAOMI_GUIDE_SEEN_KEY, true)
+                    .apply()
+                showXiaomiGuide = false
+            }
+        )
+    }
+}
+
+private const val XIAOMI_GUIDE_PREFERENCES = "timemate_xiaomi_guide"
+private const val XIAOMI_GUIDE_SEEN_KEY = "first_run_guide_seen"
+
+@Composable
+private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var exactAlarmGranted by remember { mutableStateOf(XiaomiPermissionHelper.canScheduleExactAlarms(context)) }
+    var batteryIgnored by remember { mutableStateOf(XiaomiPermissionHelper.isIgnoringBatteryOptimizations(context)) }
+
+    val settingsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        exactAlarmGranted = XiaomiPermissionHelper.canScheduleExactAlarms(context)
+        batteryIgnored = XiaomiPermissionHelper.isIgnoringBatteryOptimizations(context)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MidnightBlue,
+        title = {
+            Text("تنظیم اولیه برای پایداری بیدارباش", color = IceWhite, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    "در گوشی‌های Xiaomi، Redmi و POCO ممکن است مدیریت باتری اجرای زنگ را محدود کند. این راهنما فقط مسیر تنظیمات را باز می‌کند؛ فعال‌سازی گزینه‌ها باید توسط شما انجام شود.",
+                    color = CoolSilver,
+                    fontSize = 13.sp
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("۱. شروع خودکار (Autostart)", color = IceWhite, fontWeight = FontWeight.SemiBold)
+                    Text("در تنظیمات بازشده، شروع خودکار TimeMate را فعال کنید. این وضعیت از طریق Android قابل تأیید مطمئن نیست و باید دستی بررسی شود.", color = CoolSilver, fontSize = 12.sp)
+                    OutlinedButton(
+                        onClick = { settingsLauncher.launch(XiaomiPermissionHelper.autostartSettingsIntent(context)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("باز کردن تنظیمات شروع خودکار")
+                    }
+                    Text("وضعیت: نیازمند بررسی دستی", color = SoftPurple, fontSize = 11.sp)
+                }
+
+                Divider(color = GlassBorder)
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("۲. محدودیت باتری", color = IceWhite, fontWeight = FontWeight.SemiBold)
+                    Text("در صفحه برنامه TimeMate، بخش Battery saver را روی «No restrictions / بدون محدودیت» قرار دهید. صفحه استاندارد Android ممکن است فقط فهرست برنامه‌ها را نشان دهد.", color = CoolSilver, fontSize = 12.sp)
+                    OutlinedButton(
+                        onClick = { settingsLauncher.launch(XiaomiPermissionHelper.batterySettingsIntent(context)) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("باز کردن تنظیمات باتری")
+                    }
+                    Text(
+                        if (batteryIgnored) "وضعیت قابل بررسی Android: معاف از بهینه‌سازی باتری" else "وضعیت قابل بررسی Android: معافیت فعال نیست؛ گزینه MIUI/HyperOS را نیز دستی بررسی کنید",
+                        color = if (batteryIgnored) EmeraldSuccess else SoftPurple,
+                        fontSize = 11.sp
+                    )
+                }
+
+                Divider(color = GlassBorder)
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("۳. مجوز زنگ دقیق", color = IceWhite, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                            "برای زمان‌بندی دقیق زنگ، مجوز Alarms & reminders را بررسی کنید."
+                        else
+                            "در این نسخه اندروید، مجوز جداگانه زنگ دقیق لازم نیست.",
+                        color = CoolSilver,
+                        fontSize = 12.sp
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        OutlinedButton(
+                            onClick = { settingsLauncher.launch(XiaomiPermissionHelper.exactAlarmSettingsIntent(context)) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("باز کردن تنظیمات زنگ دقیق")
+                        }
+                        Text(
+                            if (exactAlarmGranted) "وضعیت: مجوز زنگ دقیق فعال است" else "وضعیت: مجوز زنگ دقیق فعال نیست",
+                            color = if (exactAlarmGranted) EmeraldSuccess else SoftPurple,
+                            fontSize = 11.sp
+                        )
+                    } else {
+                        Text("وضعیت: توسط نسخه Android پشتیبانی/مدیریت می‌شود", color = EmeraldSuccess, fontSize = 11.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+            ) {
+                Text("متوجه شدم", color = IceWhite)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("بعداً", color = CoolSilver)
+            }
+        }
+    )
 }
 
 @Composable
@@ -1491,10 +1623,8 @@ fun AddReminderDialog(
 // 5. SETTINGS & HOURLY CHIME + XIAOMI MIUI RELIABILITY GUARD
 // ==========================================
 @Composable
-fun SettingsScreen(viewModel: TimeMateViewModel) {
+fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit = {}) {
     val context = LocalContext.current
-    val exactAlarmGranted = remember { XiaomiPermissionHelper.canScheduleExactAlarms(context) }
-    val batteryIgnored = remember { XiaomiPermissionHelper.isIgnoringBatteryOptimizations(context) }
     var isChimeEnabled by remember {
         mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
     }
@@ -1512,7 +1642,6 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
             )
         }
 
-        // Hourly Ding-Ding Chime Configuration Card
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -1558,60 +1687,33 @@ fun SettingsScreen(viewModel: TimeMateViewModel) {
             }
         }
 
-        item {
-            GlassCard(
-                modifier = Modifier.fillMaxWidth(),
-                borderColor = NeonViolet
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "تضمین اجرای زنگ در شیائومی (Redmi / MIUI / HyperOS)",
-                        fontWeight = FontWeight.Bold,
-                        color = IceWhite,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "برای اینکه زنگ ساعت و دینگ‌دینگ سر ساعت حتی در زمان بسته بودن کامل برنامه کار کند، این ۳ مجوز را فعال کنید:",
-                        fontSize = 13.sp,
-                        color = CoolSilver
-                    )
-
-                    Button(
-                        onClick = { XiaomiPermissionHelper.openXiaomiAutostartSettings(context) },
-                        colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("۱. فعال‌سازی شروع خودکار (Autostart شیائومی)")
-                    }
-
-                    Button(
-                        onClick = { XiaomiPermissionHelper.requestIgnoreBatteryOptimizations(context) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (batteryIgnored) EmeraldSuccess else RoyalAzure
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+        if (XiaomiPermissionHelper.isXiaomiDevice()) {
+            item {
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = NeonViolet
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            if (batteryIgnored)
-                                "۲. محدودیت باتری غیرفعال است (تأیید شده)"
-                            else
-                                "۲. حذف محدودیت باتری (No Restrictions)"
+                            text = "راهنمای پایداری زنگ در MIUI و HyperOS",
+                            fontWeight = FontWeight.Bold,
+                            color = IceWhite,
+                            fontSize = 16.sp
                         )
-                    }
-
-                    Button(
-                        onClick = { XiaomiPermissionHelper.openExactAlarmSettings(context) },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (exactAlarmGranted) EmeraldSuccess else NeonViolet
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
                         Text(
-                            if (exactAlarmGranted)
-                                "۳. مجوز آلارم دقیق فعال است (Exact Alarm)"
-                            else
-                                "۳. اعطای مجوز آلارم دقیق (Exact Alarm)"
+                            text = "تنظیمات شروع خودکار، محدودیت باتری و مجوز زنگ دقیق را هر زمان خواستید دوباره بررسی کنید.",
+                            fontSize = 13.sp,
+                            color = CoolSilver
                         )
+                        Button(
+                            onClick = onOpenXiaomiGuide,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+                        ) {
+                            Icon(Icons.Default.Tune, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("باز کردن راهنمای تنظیمات شیائومی")
+                        }
                     }
                 }
             }
