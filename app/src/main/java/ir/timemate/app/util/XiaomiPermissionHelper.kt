@@ -49,12 +49,9 @@ object XiaomiPermissionHelper {
     }
 
     fun batterySettingsIntent(context: Context): Intent {
-        val batterySettings = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-        return if (resolves(context, batterySettings)) {
-            batterySettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        } else {
-            appDetailsSettingsIntent(context)
-        }
+        // App details is the most useful stable entry point on MIUI/HyperOS:
+        // the user can open Battery saver and select "No restrictions" there.
+        return appDetailsSettingsIntent(context)
     }
 
     fun exactAlarmSettingsIntent(context: Context): Intent {
