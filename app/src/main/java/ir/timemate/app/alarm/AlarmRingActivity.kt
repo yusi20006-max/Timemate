@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.timemate.app.ui.theme.*
+import ir.timemate.app.ui.theme.ThemeDataStore
+import ir.timemate.app.ui.theme.AppTheme
 import ir.timemate.app.TimeMateApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +88,8 @@ class AlarmRingActivity : ComponentActivity() {
                     ).show()
                 }
             }
-            TimeMateTheme {
+            val selectedTheme by ThemeDataStore.observe(this@AlarmRingActivity).collectAsState(initial = AppTheme.DEEP_OCEAN)
+            TimeMateTheme(selectedTheme) {
                 val cal = Calendar.getInstance()
                 val timeStr = "%02d:%02d".format(cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
 
@@ -106,7 +109,7 @@ class AlarmRingActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(NeonViolet.copy(alpha = 0.35f), RoyalAzure.copy(alpha = 0.2f), DeepBlack)
+                                colors = listOf(MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f), MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), MaterialTheme.colorScheme.background)
                             )
                         ),
                     contentAlignment = Alignment.Center
@@ -120,15 +123,15 @@ class AlarmRingActivity : ComponentActivity() {
                             modifier = Modifier
                                 .size(190.dp)
                                 .scale(scale)
-                                .background(GlassSurface, CircleShape)
-                                .border(2.dp, NeonViolet, CircleShape),
+                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                .border(2.dp, MaterialTheme.colorScheme.secondary, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = toPersianDigits(timeStr),
                                 fontSize = 48.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = IceWhite
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -136,7 +139,7 @@ class AlarmRingActivity : ComponentActivity() {
                             text = title,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
-                            color = IceWhite
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -149,32 +152,32 @@ class AlarmRingActivity : ComponentActivity() {
                                     confirmSnooze()
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(20.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(58.dp)
                         ) {
-                            Icon(Icons.Default.Snooze, contentDescription = null, tint = IceWhite)
+                            Icon(Icons.Default.Snooze, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                             Spacer(Modifier.width(10.dp))
                             Text(
                                 text = "چرت زدن (${toPersianDigits(snoozeMinutes)} دقیقه)",
                                 fontSize = 18.sp,
-                                color = IceWhite
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
                         OutlinedButton(
                             onClick = { stopAlarmAndFinish() },
                             shape = RoundedCornerShape(20.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, NeonViolet),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.secondary),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(58.dp)
                         ) {
-                            Icon(Icons.Default.AlarmOff, contentDescription = null, tint = IceWhite)
+                            Icon(Icons.Default.AlarmOff, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                             Spacer(Modifier.width(10.dp))
-                            Text(text = "بیدار شدم (قطع کامل زنگ)", fontSize = 18.sp, color = IceWhite)
+                            Text(text = "بیدار شدم (قطع کامل زنگ)", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -183,11 +186,11 @@ class AlarmRingActivity : ComponentActivity() {
             if (showThirdSnoozeWarning) {
                 AlertDialog(
                     onDismissRequest = { showThirdSnoozeWarning = false },
-                    title = { Text("هشدار تکرار چرت", color = IceWhite, fontWeight = FontWeight.Bold) },
+                    title = { Text("هشدار تکرار چرت", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                     text = {
                         Text(
                             "این سومین بار است که زمان بیدارباش را عقب می‌اندازید. اگر ادامه دهید، زنگ دوباره پس از $snoozeMinutes دقیقه پخش می‌شود.",
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     confirmButton = {
@@ -195,15 +198,15 @@ class AlarmRingActivity : ComponentActivity() {
                             showThirdSnoozeWarning = false
                             confirmSnooze()
                         }) {
-                            Text("ادامه چرت", color = NeonViolet)
+                            Text("ادامه چرت", color = MaterialTheme.colorScheme.secondary)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showThirdSnoozeWarning = false }) {
-                            Text("برگشت به زنگ", color = CoolSilver)
+                            Text("برگشت به زنگ", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     },
-                    containerColor = MidnightBlue
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             }
         }
