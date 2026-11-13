@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+ android:id="@+id/prayer_widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+ android:orientation="vertical" android:gravity="center_vertical" android:padding="16dp"
+ android:background="#F3F7FC">
+ <TextView android:id="@+id/prayer_city" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="تهران" android:textColor="#18243A" android:textSize="20sp" android:textStyle="bold" />
+ <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="روشن تصویری" android:textColor="#D97706" android:textSize="12sp" />
+ <TextView android:id="@+id/prayer_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="داده رسمی در دسترس نیست" android:textColor="#18243A" android:textSize="15sp" android:textStyle="bold"
+  android:layout_marginTop="10dp" />
+ <TextView android:id="@+id/prayer_next" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="پس از تأیید منبع رسمی" android:textColor="#52647D" android:textSize="12sp" android:layout_marginTop="4dp" />
+ <TextView android:id="@+id/prayer_source" android:layout_width="match_parent" android:layout_height="wrap_content"
+  android:text="دانشگاه تهران، مرکز تقویم" android:textColor="#52647D" android:textSize="9sp" android:layout_marginTop="8dp" />
+</LinearLayout>
