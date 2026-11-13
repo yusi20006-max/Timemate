@@ -44,7 +44,6 @@ object XiaomiPermissionHelper {
             Intent("miui.intent.action.POWER_HIDE_MODE_ACTIVITY")
         )
         return candidates.firstOrNull { resolves(context, it) }
-            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             ?: appDetailsSettingsIntent(context)
     }
 
@@ -62,7 +61,7 @@ object XiaomiPermissionHelper {
             data = Uri.parse("package:${context.packageName}")
         }
         return if (resolves(context, exactAlarmSettings)) {
-            exactAlarmSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            exactAlarmSettings
         } else {
             appDetailsSettingsIntent(context)
         }
@@ -71,7 +70,6 @@ object XiaomiPermissionHelper {
     private fun appDetailsSettingsIntent(context: Context): Intent {
         val appDetails = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:${context.packageName}")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         return if (resolves(context, appDetails)) appDetails else Intent(Settings.ACTION_SETTINGS)
     }
