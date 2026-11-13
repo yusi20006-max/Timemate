@@ -10,18 +10,20 @@ class OfficialPrayerTimesPdfParserTest {
     private val city = PrayerCities.provincialCapitals.first { it.id == "tehran" }
     private val source = "https://calendar.ut.ac.ir/documents/official/Tehran1405.pdf"
 
-    private fun completeYearText(): String = buildString {
+    private fun completeYearPages(): List<String> {
         val monthDays = listOf(31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29)
-        monthDays.forEachIndexed { index, count ->
-            appendLine("اوقات شرعی در تهران فروردین 1405".replace("فروردین", JalaliDate.MONTH_NAMES[index]))
-            repeat(count) { day ->
-                appendLine("23:30 18:30 18:00 12:00 06:00 05:00 شنبه ${day + 1}")
+        return monthDays.mapIndexed { index, count ->
+            buildString {
+                appendLine("اوقات شرعی در تهران ${JalaliDate.MONTH_NAMES[index]} سال 1405")
+                repeat(count) { day ->
+                    appendLine("23:30 18:30 18:00 12:00 06:00 05:00 شنبه ${day + 1}")
+                }
             }
         }
     }
 
-    @Test fun parsesFullOfficialYearAndMapsPdfColumns() {
-        val days = OfficialPrayerTimesPdfParser.parseText(completeYearText(), city, source)
+    @Test fun parsesTwelveMonthlyPagesAndMapsPdfColumns() {
+        val days = OfficialPrayerTimesPdfParser.parsePages(completeYearPages(), city, source)
         assertEquals(365, days.size)
         val first = days.first()
         val expected = PersianCalendarUtils.jalaliToGregorian(1405, 1, 1)
@@ -35,11 +37,12 @@ class OfficialPrayerTimesPdfParserTest {
     }
 
     @Test fun rejectsNonUniversityPdfUrl() {
-        assertTrue(OfficialPrayerTimesPdfParser.parseText(completeYearText(), city, "https://example.com/timetable.pdf").isEmpty())
+        assertTrue(OfficialPrayerTimesPdfParser.parsePages(completeYearPages(), city, "https://example.com/Tehran1405.pdf").isEmpty())
     }
 
     @Test fun rejectsIncompleteAnnualCoverage() {
-        val incomplete = completeYearText().lineSequence().take(100).joinToString("\n")
-        assertTrue(OfficialPrayerTimesPdfParser.parseText(incomplete, city, source).isEmpty())
+        val pages = completeYearPages().toMutableList()
+        pages[11] = pages[11].lineSequence().dropLast(1).joinToString("\n")
+        assertTrue(OfficialPrayerTimesPdfParser.parsePages(pages, city, source).isEmpty())
     }
 }
