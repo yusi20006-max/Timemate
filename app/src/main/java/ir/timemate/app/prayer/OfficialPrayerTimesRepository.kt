@@ -50,6 +50,7 @@ class OfficialPrayerTimesRepository(context: Context) {
                     PDFTextStripper().apply {
                         startPage = page
                         endPage = page
+                        sortByPosition = true
                     }.getText(document)
                 }
             }
