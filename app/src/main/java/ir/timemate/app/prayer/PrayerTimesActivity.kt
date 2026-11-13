@@ -104,7 +104,7 @@ fun PrayerTimesScreen() {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("شهر انتخاب‌شده: ${city.title}", style = MaterialTheme.typography.titleMedium)
-                    Text("تاریخ: ${PersianCalendarUtils.today().formatFull()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("تاریخ: ${PersianCalendarUtils.gregorianToJalali(today.year, today.monthValue, today.dayOfMonth).formatFull()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = {
                             val index = PrayerCities.provincialCapitals.indexOfFirst { it.id == cityId }
