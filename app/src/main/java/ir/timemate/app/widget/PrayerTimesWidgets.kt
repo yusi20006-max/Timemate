@@ -6,17 +6,16 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.widget.RemoteViews
 import android.os.SystemClock
+import android.widget.RemoteViews
 import ir.timemate.app.R
-import ir.timemate.app.prayer.PrayerTimesActivity
-import ir.timemate.app.prayer.PrayerTimesSource
 import ir.timemate.app.prayer.PrayerCities
+import ir.timemate.app.prayer.PrayerTimesActivity
 import ir.timemate.app.prayer.PrayerTimesCache
 import ir.timemate.app.prayer.PrayerTimesEngine
+import ir.timemate.app.prayer.PrayerTimesSource
 import ir.timemate.app.util.PersianCalendarUtils
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
@@ -37,7 +36,8 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
             val views = RemoteViews(context.packageName, layout)
             val prefs = context.getSharedPreferences("prayer_times", Context.MODE_PRIVATE)
             val cityId = prefs.getString("city_id", "tehran") ?: "tehran"
-            val city = PrayerCities.provincialCapitals.firstOrNull { it.id == cityId } ?: PrayerCities.provincialCapitals.first()
+            val city = PrayerCities.provincialCapitals.firstOrNull { it.id == cityId }
+                ?: PrayerCities.provincialCapitals.first()
             val zone = runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran"))
             val now = ZonedDateTime.ofInstant(Instant.now(), zone)
             val today = now.toLocalDate()
@@ -50,16 +50,25 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
 
             if (cached == null) {
                 views.setTextViewText(R.id.prayer_status, "داده رسمی در دسترس نیست")
-                views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)\n                views.setTextViewText(R.id.prayer_next, "پس از دریافت داده معتبر نمایش داده می‌شود")
+                views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)
+                views.setTextViewText(R.id.prayer_next, "پس از دریافت داده معتبر نمایش داده می‌شود")
             } else {
                 val tomorrow = cache.get(city, today.plusDays(1).toString())?.day
                 val next = PrayerTimesEngine.nextPrayer(cached.day, tomorrow, now)
-                views.setTextViewText(R.id.prayer_status, "داده ذخیره‌شده آفلاین")
-                views.setTextViewText(
-                    R.id.prayer_next,
-                    if (next == null) "وقت بعدی در داده ذخیره‌شده موجود نیست"
-                    else "${next.event.label} • ${PrayerTimesEngine.formatCountdown(next.remaining)}"
-                )
+                if (next == null) {
+                    views.setTextViewText(R.id.prayer_status, "داده آفلاین • وقت بعدی نامشخص")
+                    views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)
+                    views.setTextViewText(R.id.prayer_next, "داده روز بعد موجود نیست")
+                } else {
+                    views.setTextViewText(R.id.prayer_status, "وقت بعدی: ${next.event.label} • داده آفلاین")
+                    views.setChronometerCountDown(R.id.prayer_next, true)
+                    views.setChronometer(
+                        R.id.prayer_next,
+                        SystemClock.elapsedRealtime() + next.remaining.toMillis(),
+                        "%s",
+                        true
+                    )
+                }
             }
 
             val open = Intent(context, PrayerTimesActivity::class.java)
