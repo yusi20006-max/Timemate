@@ -1053,7 +1053,7 @@ fun WidgetsGalleryScreen() {
                         .fillMaxWidth()
                         .height(120.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceVariant)))
                         .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1064,7 +1064,7 @@ fun WidgetsGalleryScreen() {
                         Text(weekdayStr, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(yearStr, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF60A5FA))
+                        Text(yearStr, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         Text(clockStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
@@ -1081,7 +1081,7 @@ fun WidgetsGalleryScreen() {
                         modifier = Modifier
                             .size(165.dp)
                             .clip(RoundedCornerShape(22.dp))
-                            .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                            .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceVariant)))
                             .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                             .padding(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1107,7 +1107,7 @@ fun WidgetsGalleryScreen() {
                         .fillMaxWidth()
                         .height(68.dp)
                         .clip(RoundedCornerShape(22.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
+                        .background(Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceVariant)))
                         .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(horizontal = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
