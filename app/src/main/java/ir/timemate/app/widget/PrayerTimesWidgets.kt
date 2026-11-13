@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import android.os.SystemClock
 import ir.timemate.app.R
 import ir.timemate.app.prayer.PrayerTimesActivity
 import ir.timemate.app.prayer.PrayerTimesSource
@@ -49,7 +50,7 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
 
             if (cached == null) {
                 views.setTextViewText(R.id.prayer_status, "داده رسمی در دسترس نیست")
-                views.setTextViewText(R.id.prayer_next, "پس از دریافت داده معتبر نمایش داده می‌شود")
+                views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)\n                views.setTextViewText(R.id.prayer_next, "پس از دریافت داده معتبر نمایش داده می‌شود")
             } else {
                 val tomorrow = cache.get(city, today.plusDays(1).toString())?.day
                 val next = PrayerTimesEngine.nextPrayer(cached.day, tomorrow, now)
