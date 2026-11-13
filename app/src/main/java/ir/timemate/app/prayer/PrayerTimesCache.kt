@@ -14,7 +14,7 @@ class PrayerTimesCache(context: Context) {
     private val gson = Gson()
 
     fun save(day: PrayerTimesDay, fetchedAtMillis: Long = System.currentTimeMillis()): Boolean {
-        if (!day.hasValidTimes()) return false
+        if (!day.hasValidTimes() || !day.hasOfficialSource()) return false
         if (runCatching { LocalDate.parse(day.dateIso) }.isFailure) return false
         if (PrayerCities.provincialCapitals.none { it.id == day.city.id }) return false
         val key = key(day.city.id, day.dateIso)
@@ -26,7 +26,7 @@ class PrayerTimesCache(context: Context) {
         val raw = preferences.getString(key(city.id, dateIso), null) ?: return null
         return runCatching { gson.fromJson(raw, CachedPrayerTimes::class.java) }
             .getOrNull()
-            ?.takeIf { it.day.city.id == city.id && it.day.dateIso == dateIso && it.day.hasValidTimes() }
+            ?.takeIf { it.day.city.id == city.id && it.day.dateIso == dateIso && it.day.hasValidTimes() && it.day.hasOfficialSource() }
     }
 
     fun getTomorrow(city: PrayerCity, date: LocalDate): PrayerTimesDay? =
