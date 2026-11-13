@@ -7,11 +7,12 @@ import java.util.Locale
 
 /**
  * The official 1405 PDFs contain one Jalali month per page.
- * Each data row is ordered as: midnight, maghrib, sunset, dhuhr, sunrise, fajr, weekday, day.
+ * The six time columns may be extracted in either visual direction by PDF text engines.
  */
 object OfficialPrayerTimesPdfParser {
     private val timeRegex = Regex("""(?<!\d)([0-2]?\d):([0-5]\d)(?!\d)""")
     private val trailingDayRegex = Regex("""(\d{1,2})\s*$""")
+    private val leadingDayRegex = Regex("""^\s*(\d{1,2})\s+""")
 
     fun parsePages(pages: List<String>, city: PrayerCity, sourceUrl: String): List<PrayerTimesDay> {
         val uri = runCatching { URI(sourceUrl) }.getOrNull() ?: return emptyList()
@@ -33,9 +34,11 @@ object OfficialPrayerTimesPdfParser {
                 if (times.size != 6 || times.any { it.isBlank() }) return@forEach
 
                 val day = trailingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                    ?: leadingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
                     ?: return@forEach
                 if (day !in 1..31) return@forEach
 
+                val ascendingTimes = if (times.first() > times.last()) times.reversed() else times
                 val gregorian = runCatching { PersianCalendarUtils.jalaliToGregorian(1405, month, day) }
                     .getOrNull() ?: return@forEach
                 if (gregorian.month !in 1..12 || gregorian.day !in 1..31) return@forEach
@@ -44,12 +47,12 @@ object OfficialPrayerTimesPdfParser {
                 val record = PrayerTimesDay(
                     city = city,
                     dateIso = dateIso,
-                    fajr = times[5],
-                    sunrise = times[4],
-                    dhuhr = times[3],
-                    sunset = times[2],
-                    maghrib = times[1],
-                    midnight = times[0],
+                    fajr = ascendingTimes[0],
+                    sunrise = ascendingTimes[1],
+                    dhuhr = ascendingTimes[2],
+                    sunset = ascendingTimes[3],
+                    maghrib = ascendingTimes[4],
+                    midnight = ascendingTimes[5],
                     sourceUrl = sourceUrl
                 )
                 if (record.hasValidTimes() && record.hasOfficialSource()) {
@@ -78,4 +81,6 @@ object OfficialPrayerTimesPdfParser {
         .replace('٨', '8').replace('٩', '9')
         .replace('ي', 'ی').replace('ك', 'ک')
         .replace("\u200c", "")
+        .replace("\u200e", "")
+        .replace("\u200f", "")
 }
