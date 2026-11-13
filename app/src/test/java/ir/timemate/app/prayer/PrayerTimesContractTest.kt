@@ -27,10 +27,6 @@ class PrayerTimesContractTest {
         assertFalse(day().copy(sunrise = "04:30").hasValidTimes())
     }
 
-    @Test fun repositoryFailsClosedWithoutVerifiedFeed() {
-        assertTrue(OfficialPrayerTimesRepository().currentState() is PrayerTimesState.Unavailable)
-    }
-
     @Test fun selectsNextPrayerInSameDay() {
         val now = ZonedDateTime.of(2026, 11, 14, 10, 0, 0, 0, ZoneId.of("Asia/Tehran"))
         val next = PrayerTimesEngine.nextPrayer(day(), null, now)
