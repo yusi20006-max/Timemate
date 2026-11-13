@@ -20,6 +20,21 @@ class BootReceiver : BroadcastReceiver() {
                     AlarmScheduler.scheduleAlarm(context, alarm)
                 }
 
+                SnoozeSessionStore.getPendingSessions(context).forEach { session ->
+                    AlarmScheduler.scheduleSnooze(
+                        context,
+                        session.alarmId,
+                        session.title,
+                        SnoozePreferences.getMinutes(context),
+                        session.isVibrate,
+                        session.isGradual,
+                        session.ringtoneUri,
+                        session.sessionId,
+                        session.snoozeCount,
+                        session.nextTriggerAtMillis
+                    )
+                }
+
                 val activeReminders = db.dao().getActiveRemindersSnapshot()
                 activeReminders.forEach { reminder ->
                     AlarmScheduler.scheduleReminder(context, reminder)

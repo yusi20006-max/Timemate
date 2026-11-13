@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ir.timemate.app.alarm.AlarmScheduler
 import ir.timemate.app.alarm.HourlyChimeSynthesizer
+import ir.timemate.app.alarm.SnoozePreferences
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.ReminderEntity
 import ir.timemate.app.ui.TimeMateViewModel
@@ -1628,6 +1629,9 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
     var isChimeEnabled by remember {
         mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
     }
+    var selectedSnoozeMinutes by remember {
+        mutableIntStateOf(SnoozePreferences.getMinutes(context))
+    }
 
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -1640,6 +1644,42 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                 fontWeight = FontWeight.Bold,
                 color = IceWhite
             )
+        }
+
+        item {
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                borderColor = NeonViolet
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "مدت زمان چرت زدن",
+                        fontWeight = FontWeight.Bold,
+                        color = IceWhite,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "مدت تعویق زنگ برای همه بیدارباش‌ها",
+                        fontSize = 12.sp,
+                        color = CoolSilver
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(5, 10, 15).forEach { minutes ->
+                            FilterChip(
+                                selected = selectedSnoozeMinutes == minutes,
+                                onClick = {
+                                    selectedSnoozeMinutes = minutes
+                                    SnoozePreferences.setMinutes(context, minutes)
+                                },
+                                label = { Text("${toPersianDigits(minutes.toString())} دقیقه") }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         item {

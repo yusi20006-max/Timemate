@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import ir.timemate.app.MainActivity
 import ir.timemate.app.data.model.AlarmEntity
 import ir.timemate.app.data.model.ReminderEntity
@@ -91,7 +92,8 @@ object AlarmScheduler {
             putExtra(AlarmReceiver.EXTRA_IS_VIBRATE, alarm.isVibrate)
             putExtra(AlarmReceiver.EXTRA_IS_GRADUAL, alarm.isGradualVolume)
             putExtra(AlarmReceiver.EXTRA_RINGTONE_URI, alarm.ringtoneUri)
-            putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, alarm.snoozeMinutes)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, SnoozePreferences.getMinutes(context))
+            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, false)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -124,31 +126,56 @@ object AlarmScheduler {
         snoozeMinutes: Int,
         isVibrate: Boolean,
         isGradual: Boolean,
-        ringtoneUri: String?
+        ringtoneUri: String?,
+        sessionId: String,
+        snoozeCount: Int,
+        triggerAtMillis: Long? = null
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val triggerTime = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000L)
+        val triggerTime = maxOf(
+            triggerAtMillis ?: (System.currentTimeMillis() + snoozeMinutes * 60 * 1000L),
+            System.currentTimeMillis() + 1000L
+        )
+        val baseTitle = title.removeSuffix(" (چرت)")
+        SnoozeSessionStore.savePending(
+            context,
+            SnoozeSession(
+                alarmId = alarmId,
+                sessionId = sessionId,
+                snoozeCount = snoozeCount,
+                nextTriggerAtMillis = triggerTime,
+                title = baseTitle,
+                isVibrate = isVibrate,
+                isGradual = isGradual,
+                ringtoneUri = ringtoneUri
+            )
+        )
 
+        val snoozeData = Uri.parse("timemate://snooze/$alarmId/$sessionId")
         val triggerIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmReceiver.ACTION_TRIGGER_ALARM
+            data = snoozeData
             putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
-            putExtra(AlarmReceiver.EXTRA_TITLE, "$title (چرت)")
+            putExtra(AlarmReceiver.EXTRA_TITLE, "$baseTitle (چرت)")
             putExtra(AlarmReceiver.EXTRA_IS_VIBRATE, isVibrate)
             putExtra(AlarmReceiver.EXTRA_IS_GRADUAL, isGradual)
             putExtra(AlarmReceiver.EXTRA_RINGTONE_URI, ringtoneUri)
-            putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, snoozeMinutes)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_MINUTES, SnoozePreferences.getMinutes(context))
+            putExtra(AlarmReceiver.EXTRA_IS_SNOOZE, true)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_SESSION_ID, sessionId)
+            putExtra(AlarmReceiver.EXTRA_SNOOZE_COUNT, snoozeCount)
         }
 
+        val requestCode = SNOOZE_REQUEST_CODE_BASE + alarmId
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            alarmId + 50000,
+            requestCode,
             triggerIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
         val showPendingIntent = PendingIntent.getActivity(
             context,
-            alarmId + 50000,
+            requestCode,
             Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -156,9 +183,30 @@ object AlarmScheduler {
         try {
             alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerTime, showPendingIntent), pendingIntent)
         } catch (e: SecurityException) {
+            SnoozeSessionStore.clear(context, alarmId, sessionId)
             e.printStackTrace()
         }
     }
+
+    fun cancelSnooze(context: Context, alarmId: Int, sessionId: String) {
+        val intent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ACTION_TRIGGER_ALARM
+            data = Uri.parse("timemate://snooze/$alarmId/$sessionId")
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            SNOOZE_REQUEST_CODE_BASE + alarmId,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        pendingIntent?.let {
+            (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).cancel(it)
+            it.cancel()
+        }
+        SnoozeSessionStore.clear(context, alarmId, sessionId)
+    }
+
+    private const val SNOOZE_REQUEST_CODE_BASE = 50000
 
     fun cancelAlarm(context: Context, alarmId: Int) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
