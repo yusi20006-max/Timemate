@@ -30,8 +30,15 @@ data class PrayerTimesDay(
  val sunset:String,val maghrib:String,val midnight:String,
  val sourceUrl:String=PrayerTimesSource.OFFICIAL_PAGE
 ) {
- fun hasValidTimes():Boolean = listOf(fajr,sunrise,dhuhr,sunset,maghrib,midnight)
-  .all { it.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$")) }
+ fun hasValidTimes(): Boolean {
+  val values = listOf(fajr, sunrise, dhuhr, sunset, maghrib, midnight)
+  if (values.any { !it.matches(Regex("^([01]\\d|2[0-3]):[0-5]\\d$")) }) return false
+  val minutes = values.map { value ->
+   val parts = value.split(":")
+   parts[0].toInt() * 60 + parts[1].toInt()
+  }
+  return minutes.zipWithNext().all { (earlier, later) -> later > earlier }
+ }
 }
 /** Fails closed until current-year official data is extracted and verified. */
 class OfficialPrayerTimesRepository {
