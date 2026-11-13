@@ -27,7 +27,7 @@ class PrayerTimesActivity:ComponentActivity(){
   item{Card(Modifier.fillMaxWidth()){Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
    Text("شهر انتخاب‌شده: ${city.title}",style=MaterialTheme.typography.titleMedium)
    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-    OutlinedButton(onClick={val i=PrayerCities.provincialCapitals.indexOfFirst{it.id==cityId};cityId=PrayerCities.provincialCapitals[(i-1).coerceAtLeast(0)].id;context.getSharedPreferences("prayer_times",0).edit().putString("city_id",cityId).apply();BasePrayerTimesWidgetProvider.updateAll(context);BasePrayerTimesWidgetProvider.updateAll(context)}){Text("شهر قبلی")}
+    OutlinedButton(onClick={val i=PrayerCities.provincialCapitals.indexOfFirst{it.id==cityId};cityId=PrayerCities.provincialCapitals[(i-1).coerceAtLeast(0)].id;context.getSharedPreferences("prayer_times",0).edit().putString("city_id",cityId).apply();BasePrayerTimesWidgetProvider.updateAll(context)}){Text("شهر قبلی")}
     OutlinedButton(onClick={val i=PrayerCities.provincialCapitals.indexOfFirst{it.id==cityId};cityId=PrayerCities.provincialCapitals[(i+1)%PrayerCities.provincialCapitals.size].id;context.getSharedPreferences("prayer_times",0).edit().putString("city_id",cityId).apply();BasePrayerTimesWidgetProvider.updateAll(context)}){Text("شهر بعدی")}
    }
   }}}
