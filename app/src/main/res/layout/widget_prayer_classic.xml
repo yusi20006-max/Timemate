@@ -12,7 +12,7 @@
  <TextView android:id="@+id/prayer_status" android:layout_width="match_parent" android:layout_height="wrap_content"
   android:text="داده رسمی در دسترس نیست" android:textColor="#F1F5FF" android:textSize="15sp" android:textStyle="bold"
   android:layout_marginTop="10dp" />
- <TextView android:id="@+id/prayer_next" android:layout_width="match_parent" android:layout_height="wrap_content"
+ <Chronometer android:id="@+id/prayer_next" android:layout_width="match_parent" android:layout_height="wrap_content"
   android:text="پس از تأیید منبع رسمی" android:textColor="#9CAAC4" android:textSize="12sp" android:layout_marginTop="4dp" />
  <TextView android:id="@+id/prayer_source" android:layout_width="match_parent" android:layout_height="wrap_content"
   android:text="دانشگاه تهران، مرکز تقویم" android:textColor="#9CAAC4" android:textSize="9sp" android:layout_marginTop="8dp" />
