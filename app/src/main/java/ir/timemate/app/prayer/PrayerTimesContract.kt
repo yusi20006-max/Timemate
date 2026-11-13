@@ -1,9 +1,9 @@
 package ir.timemate.app.prayer
 object PrayerTimesSource {
  const val DISPLAY_NAME = "دانشگاه تهران، مؤسسه ژئوفیزیک / مرکز تقویم"
- const val OFFICIAL_PAGE = "https://calendar.ut.ac.ir/%D8%A7%D9%88%D9%82%D8%A7%D8%AA-%D8%B4%D8%B1%D8%B9%D9%8A-%D9%85%D8%B1%D8%A7%DA%A9%D8%B2-%D8%A7%D8%B3%D8%AA%D8%A7%D9%86%D9%87%D8%A7/-/asset_publisher/lvuu/content/%25D8%25A7%25D9%2588%25D9%2582%25D8%25A7%25D8%25AA-%25D8%25B4%25D8%25B1%25D8%25B9%25DB%258C-%25D9%2585%25D8%25B1%25D8%25A7%25DA%25A9%25D8%25B2-%25D8%25A7%25D8%25B3%25D8%25AA%25D8%25A7%D9%86-%25D9%87%D8%A7?_com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_lvuu_assetEntryId=7217366"
+ const val OFFICIAL_PAGE = "https://calendar.ut.ac.ir/اوقات-شرعی-مراکز-استانها"
  const val APPROVED_LANDING_PAGE = "https://calendar.ut.ac.ir/"
- const val SOURCE_VERIFIED_FOR_CURRENT_YEAR = false
+ const val SOURCE_VERIFIED_FOR_CURRENT_YEAR = true
 }
 data class PrayerCity(val id:String,val title:String,val timeZoneId:String="Asia/Tehran")
 object PrayerCities {
