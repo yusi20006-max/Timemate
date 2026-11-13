@@ -104,7 +104,7 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManufacturerPicker by remember { mutableStateOf(false) }
     var showDeviceGuide by remember { mutableStateOf(false) }
-    val devicePreferences by DeviceSetupDataStore.observe(context).collectAsState(initial = null)
+    val devicePreferences by DeviceSetupDataStore.observe(context).map { it as DeviceSetupPreferences? }.collectAsState(initial = null)
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
 
