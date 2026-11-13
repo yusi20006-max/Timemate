@@ -33,8 +33,8 @@ object OfficialPrayerTimesPdfParser {
                 }.toList()
                 if (times.size != 6 || times.any { it.isBlank() }) return@forEach
 
-                val day = trailingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
-                    ?: leadingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                val day = leadingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
+                    ?: trailingDayRegex.find(line)?.groupValues?.getOrNull(1)?.toIntOrNull()
                     ?: return@forEach
                 if (day !in 1..31) return@forEach
 
