@@ -34,8 +34,8 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId:Int):AppWidget
    val manager=AppWidgetManager.getInstance(context)
    listOf(PrayerWidgetClassicProvider::class.java,PrayerWidgetBrightProvider::class.java,PrayerWidgetMinimalProvider::class.java,PrayerWidgetGlassProvider::class.java,PrayerWidgetPersianProvider::class.java).forEach{provider->
     manager.getAppWidgetIds(ComponentName(context,provider)).forEach{id->
-     val info=manager.getAppWidgetInfo(id)?:return@forEach
-     render(context,manager,id,info.initialLayout)
+     val info=manager.getAppWidgetInfo(id)
+     if(info != null) render(context,manager,id,info.initialLayout)
     }
    }
   }
