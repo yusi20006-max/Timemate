@@ -48,6 +48,10 @@ import ir.timemate.app.data.model.ReminderEntity
 import ir.timemate.app.ui.TimeMateViewModel
 import ir.timemate.app.ui.AlarmStatisticsScreen
 import ir.timemate.app.ui.theme.*
+import ir.timemate.app.ui.theme.AppTheme
+import ir.timemate.app.ui.theme.ThemeDataStore
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import ir.timemate.app.util.*
 import ir.timemate.app.widget.BaseMinimalWidgetProvider
 import kotlinx.coroutines.delay
@@ -66,9 +70,17 @@ class MainActivity : ComponentActivity() {
             AlarmScheduler.scheduleNextHourlyChime(this)
         }
         setContent {
-            TimeMateTheme {
-                RequestNotificationPermissionIfNeeded()
-                TimeMateMainApp(viewModel)
+            val context = LocalContext.current
+            val themeFlow = remember(context) { ThemeDataStore.observe(context).map { it as AppTheme? } }
+            val selectedTheme by themeFlow.collectAsState(initial = null)
+            val activeTheme = selectedTheme
+            if (activeTheme == null) {
+                Box(Modifier.fillMaxSize().background(Color(0xFF07090E)))
+            } else {
+                TimeMateTheme(activeTheme) {
+                    RequestNotificationPermissionIfNeeded()
+                    TimeMateMainApp(viewModel, activeTheme)
+                }
             }
         }
     }
@@ -87,7 +99,7 @@ private fun RequestNotificationPermissionIfNeeded() {
 }
 
 @Composable
-fun TimeMateMainApp(viewModel: TimeMateViewModel) {
+fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     var showXiaomiGuide by remember { mutableStateOf(false) }
@@ -109,10 +121,10 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        DeepBlack,
-                        MidnightBlue,
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.surface,
                         Color(0xFF140F2D),
-                        DeepBlack
+                        MaterialTheme.colorScheme.background
                     )
                 )
             )
@@ -139,7 +151,7 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel) {
                     3 -> DateConverterScreen()
                     4 -> AlarmStatisticsScreen(viewModel)
                     5 -> WidgetsGalleryScreen()
-                    6 -> SettingsScreen(viewModel, onOpenXiaomiGuide = { showXiaomiGuide = true })
+                    6 -> SettingsScreen(\n                        viewModel, selectedTheme,\n                        onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },\n                        onOpenXiaomiGuide = { showXiaomiGuide = true }\n                    )
                 }
             }
         }
@@ -176,9 +188,9 @@ private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MidnightBlue,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
-            Text("تنظیم اولیه برای پایداری بیدارباش", color = IceWhite, fontWeight = FontWeight.Bold)
+            Text("تنظیم اولیه برای پایداری بیدارباش", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
@@ -187,27 +199,27 @@ private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
             ) {
                 Text(
                     "در گوشی‌های Xiaomi، Redmi و POCO ممکن است مدیریت باتری اجرای زنگ را محدود کند. این راهنما فقط مسیر تنظیمات را باز می‌کند؛ فعال‌سازی گزینه‌ها باید توسط شما انجام شود.",
-                    color = CoolSilver,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("۱. شروع خودکار (Autostart)", color = IceWhite, fontWeight = FontWeight.SemiBold)
-                    Text("در تنظیمات بازشده، شروع خودکار TimeMate را فعال کنید. این وضعیت از طریق Android قابل تأیید مطمئن نیست و باید دستی بررسی شود.", color = CoolSilver, fontSize = 12.sp)
+                    Text("۱. شروع خودکار (Autostart)", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    Text("در تنظیمات بازشده، شروع خودکار TimeMate را فعال کنید. این وضعیت از طریق Android قابل تأیید مطمئن نیست و باید دستی بررسی شود.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     OutlinedButton(
                         onClick = { settingsLauncher.launch(XiaomiPermissionHelper.autostartSettingsIntent(context)) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("باز کردن تنظیمات شروع خودکار")
                     }
-                    Text("وضعیت: نیازمند بررسی دستی", color = SoftPurple, fontSize = 11.sp)
+                    Text("وضعیت: نیازمند بررسی دستی", color = MaterialTheme.colorScheme.tertiary, fontSize = 11.sp)
                 }
 
-                Divider(color = GlassBorder)
+                Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("۲. محدودیت باتری", color = IceWhite, fontWeight = FontWeight.SemiBold)
-                    Text("در صفحه برنامه TimeMate، بخش Battery saver را روی «No restrictions / بدون محدودیت» قرار دهید. صفحه استاندارد Android ممکن است فقط فهرست برنامه‌ها را نشان دهد.", color = CoolSilver, fontSize = 12.sp)
+                    Text("۲. محدودیت باتری", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    Text("در صفحه برنامه TimeMate، بخش Battery saver را روی «No restrictions / بدون محدودیت» قرار دهید. صفحه استاندارد Android ممکن است فقط فهرست برنامه‌ها را نشان دهد.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     OutlinedButton(
                         onClick = { settingsLauncher.launch(XiaomiPermissionHelper.batterySettingsIntent(context)) },
                         modifier = Modifier.fillMaxWidth()
@@ -216,21 +228,21 @@ private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
                     }
                     Text(
                         if (batteryIgnored) "وضعیت قابل بررسی Android: معاف از بهینه‌سازی باتری" else "وضعیت قابل بررسی Android: معافیت فعال نیست؛ گزینه MIUI/HyperOS را نیز دستی بررسی کنید",
-                        color = if (batteryIgnored) EmeraldSuccess else SoftPurple,
+                        color = if (batteryIgnored) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiary,
                         fontSize = 11.sp
                     )
                 }
 
-                Divider(color = GlassBorder)
+                Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("۳. مجوز زنگ دقیق", color = IceWhite, fontWeight = FontWeight.SemiBold)
+                    Text("۳. مجوز زنگ دقیق", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                             "برای زمان‌بندی دقیق زنگ، مجوز Alarms & reminders را بررسی کنید."
                         else
                             "در این نسخه اندروید، مجوز جداگانه زنگ دقیق لازم نیست.",
-                        color = CoolSilver,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -242,11 +254,11 @@ private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
                         }
                         Text(
                             if (exactAlarmGranted) "وضعیت: مجوز زنگ دقیق فعال است" else "وضعیت: مجوز زنگ دقیق فعال نیست",
-                            color = if (exactAlarmGranted) EmeraldSuccess else SoftPurple,
+                            color = if (exactAlarmGranted) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.tertiary,
                             fontSize = 11.sp
                         )
                     } else {
-                        Text("وضعیت: توسط نسخه Android پشتیبانی/مدیریت می‌شود", color = EmeraldSuccess, fontSize = 11.sp)
+                        Text("وضعیت: توسط نسخه Android پشتیبانی/مدیریت می‌شود", color = MaterialTheme.colorScheme.tertiary, fontSize = 11.sp)
                     }
                 }
             }
@@ -254,14 +266,14 @@ private fun XiaomiFirstRunGuideDialog(onDismiss: () -> Unit) {
         confirmButton = {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("متوجه شدم", color = IceWhite)
+                Text("متوجه شدم", color = MaterialTheme.colorScheme.onSurface)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("بعداً", color = CoolSilver)
+                Text("بعداً", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )
@@ -280,12 +292,12 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
     )
 
     NavigationBar(
-        containerColor = MidnightBlue.copy(alpha = 0.92f),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
         tonalElevation = 0.dp,
         modifier = Modifier
             .padding(horizontal = 8.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(24.dp))
-            .border(1.dp, GlassBorder, RoundedCornerShape(24.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(24.dp))
     ) {
         items.forEach { (label, icon, index) ->
             val isSelected = selectedTab == index
@@ -296,7 +308,7 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = if (isSelected) NeonViolet else CoolSilver
+                        tint = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 label = {
@@ -305,11 +317,11 @@ fun GlassBottomNavigation(selectedTab: Int, onSelectTab: (Int) -> Unit) {
                         fontSize = 10.sp,
                         maxLines = 1,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) IceWhite else CoolSilver
+                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = RoyalAzure.copy(alpha = 0.28f)
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
                 )
             )
         }
@@ -374,12 +386,12 @@ fun HomeScreen(
                         text = "TimeMate",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = IceWhite
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = jalaliToday.formatFull(),
                         fontSize = 14.sp,
-                        color = SoftPurple
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
 
@@ -397,7 +409,7 @@ fun HomeScreen(
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                borderColor = RoyalAzure.copy(alpha = 0.45f)
+                borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -413,7 +425,7 @@ fun HomeScreen(
                             text = toPersianDigits("%02d:%02d:%02d".format(h, m, s)),
                             fontSize = 48.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = IceWhite
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Spacer(Modifier.height(6.dp))
@@ -422,7 +434,7 @@ fun HomeScreen(
                     Text(
                         text = "میلادی: ${gToday.formatNumeric()}  |  قمری: ${hToday.formatFull()}",
                         fontSize = 12.sp,
-                        color = CoolSilver
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -432,7 +444,7 @@ fun HomeScreen(
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                borderColor = if (isChimeEnabled) NeonViolet.copy(alpha = 0.6f) else GlassBorder
+                borderColor = if (isChimeEnabled) MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -444,18 +456,18 @@ fun HomeScreen(
                             text = "زنگ ساعتی «دینگ‌دینگ» (۷ صبح تا ۱۱ شب)",
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
-                            color = IceWhite
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "پخش زنگ کوتاه دو جزئی رأس هر ساعت",
                             fontSize = 12.sp,
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     TextButton(onClick = { HourlyChimeSynthesizer.playDingDing() }) {
-                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = SoftPurple, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("تست صدا", color = SoftPurple, fontSize = 12.sp)
+                        Text("تست صدا", color = MaterialTheme.colorScheme.tertiary, fontSize = 12.sp)
                     }
                     Switch(
                         checked = isChimeEnabled,
@@ -486,20 +498,20 @@ fun HomeScreen(
                             }
                             selectedDay = 1
                         }) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = "ماه قبل", tint = IceWhite)
+                            Icon(Icons.Default.ChevronRight, contentDescription = "ماه قبل", tint = MaterialTheme.colorScheme.onSurface)
                         }
 
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${JalaliDate.MONTH_NAMES[viewedMonth - 1]} ${toPersianDigits(viewedYear)}",
                                 fontWeight = FontWeight.ExtraBold,
-                                color = IceWhite,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 17.sp
                             )
                             if (viewedMonth != jalaliToday.month || viewedYear != jalaliToday.year) {
                                 Text(
                                     text = "بازگشت به امروز",
-                                    color = NeonViolet,
+                                    color = MaterialTheme.colorScheme.secondary,
                                     fontSize = 11.sp,
                                     modifier = Modifier.clickable {
                                         viewedMonth = jalaliToday.month
@@ -519,7 +531,7 @@ fun HomeScreen(
                             }
                             selectedDay = 1
                         }) {
-                            Icon(Icons.Default.ChevronLeft, contentDescription = "ماه بعد", tint = IceWhite)
+                            Icon(Icons.Default.ChevronLeft, contentDescription = "ماه بعد", tint = MaterialTheme.colorScheme.onSurface)
                         }
                     }
 
@@ -531,7 +543,7 @@ fun HomeScreen(
                         JalaliDate.DAY_SHORT_NAMES.forEachIndexed { idx, d ->
                             Text(
                                 text = d,
-                                color = if (idx == 6) UrgentRed else SoftPurple,
+                                color = if (idx == 6) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.tertiary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -567,8 +579,8 @@ fun HomeScreen(
                                         .clip(CircleShape)
                                         .background(
                                             when {
-                                                isToday -> NeonViolet
-                                                isSelected -> RoyalAzure.copy(alpha = 0.45f)
+                                                isToday -> MaterialTheme.colorScheme.secondary
+                                                isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
                                                 else -> Color.Transparent
                                             }
                                         )
@@ -580,9 +592,9 @@ fun HomeScreen(
                                     Text(
                                         text = if (dayNum != null) toPersianDigits(dayNum) else "",
                                         color = when {
-                                            isToday -> IceWhite
-                                            isHoliday -> UrgentRed
-                                            else -> IceWhite
+                                            isToday -> MaterialTheme.colorScheme.onSurface
+                                            isHoliday -> MaterialTheme.colorScheme.error
+                                            else -> MaterialTheme.colorScheme.onSurface
                                         },
                                         fontSize = 13.sp,
                                         fontWeight = if (isToday || isHoliday || isSelected) FontWeight.Bold else FontWeight.Normal
@@ -593,7 +605,7 @@ fun HomeScreen(
                     }
 
                     Spacer(Modifier.height(10.dp))
-                    Divider(color = GlassBorder)
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(Modifier.height(8.dp))
 
                     // Occasions of Selected Day
@@ -601,13 +613,13 @@ fun HomeScreen(
                         text = "مناسبت‌های ${toPersianDigits(selectedDay)} ${JalaliDate.MONTH_NAMES[viewedMonth - 1]}:",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
-                        color = SoftPurple
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                     if (selectedDayOccasions.isEmpty()) {
                         Text(
                             text = "مناسبت ثبت‌شده‌ای برای این روز وجود ندارد.",
                             fontSize = 12.sp,
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         selectedDayOccasions.forEach { occ ->
@@ -615,7 +627,7 @@ fun HomeScreen(
                                 text = "• ${occ.title}" + if (occ.isHoliday) " (تعطیل رسمی)" else "",
                                 fontSize = 13.sp,
                                 fontWeight = if (occ.isHoliday) FontWeight.Bold else FontWeight.Normal,
-                                color = if (occ.isHoliday) UrgentRed else IceWhite
+                                color = if (occ.isHoliday) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -626,14 +638,14 @@ fun HomeScreen(
                             text = "مهم‌ترین مناسبت‌ها و تعطیلات این ماه:",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         monthOccasions.forEach { occ ->
                             Text(
                                 text = "${toPersianDigits(occ.day)} ${JalaliDate.MONTH_NAMES[viewedMonth - 1]}: ${occ.title}" +
                                         if (occ.isHoliday) " [تعطیل]" else "",
                                 fontSize = 11.sp,
-                                color = if (occ.isHoliday) UrgentRed else CoolSilver
+                                color = if (occ.isHoliday) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -645,7 +657,7 @@ fun HomeScreen(
             item {
                 Text(
                     text = "کارهای عقب‌افتاده (${toPersianDigits(overdueTasks.size)})",
-                    color = UrgentRed,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -658,7 +670,7 @@ fun HomeScreen(
         item {
             Text(
                 text = "برنامه‌های امروز (${toPersianDigits(todayTasks.size)})",
-                color = IceWhite,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
@@ -668,7 +680,7 @@ fun HomeScreen(
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = "برنامه باز برای امروز ثبت نشده است.",
-                        color = CoolSilver,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
                 }
@@ -707,13 +719,13 @@ fun DateConverterScreen() {
                 text = "مبدل تاریخ و محاسبه‌گر زمان",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = IceWhite
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "تبدیل دقیق آفلاین بین تقویم خورشیدی (شمسی)، میلادی و قمری به همراه محاسبه فاصله زمانی و سن",
                 fontSize = 13.sp,
-                color = CoolSilver
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -739,7 +751,7 @@ fun DateConverterScreen() {
 
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("انتخاب تاریخ شمسی:", fontWeight = FontWeight.Bold, color = SoftPurple)
+                        Text("انتخاب تاریخ شمسی:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -790,7 +802,7 @@ fun DateConverterScreen() {
             item {
                 GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("انتخاب تاریخ میلادی:", fontWeight = FontWeight.Bold, color = SoftPurple)
+                        Text("انتخاب تاریخ میلادی:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -850,13 +862,13 @@ fun DateNumberStepper(
     onDec: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 11.sp, color = CoolSilver)
+        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         IconButton(onClick = onInc) {
-            Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = IceWhite)
+            Icon(Icons.Default.KeyboardArrowUp, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
         }
-        Text(display, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+        Text(display, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         IconButton(onClick = onDec) {
-            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = IceWhite)
+            Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -871,27 +883,27 @@ fun ConverterResultCard(
 ) {
     GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        borderColor = NeonViolet.copy(alpha = 0.6f)
+        borderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = "نتیجه تبدیل تاریخ",
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 17.sp,
-                color = IceWhite
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Divider(color = GlassBorder)
+            Divider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Text(
                 text = "خورشیدی (شمسی): ${jalali.formatFull()} (${toPersianDigits(jalali.formatNumeric())})",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = IceWhite
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "میلادی: ${gregorian.day} ${gregorian.monthName} ${gregorian.year} (${gregorian.formatNumeric()})",
                 fontSize = 14.sp,
-                color = SoftPurple
+                color = MaterialTheme.colorScheme.tertiary
             )
             Text(
                 text = "قمری: ${hijri.formatFull()}",
@@ -901,7 +913,7 @@ fun ConverterResultCard(
             Text(
                 text = "برج فلکی: ${JalaliDate.ZODIAC_NAMES.getOrElse(jalali.month - 1) { "" }}",
                 fontSize = 13.sp,
-                color = CoolSilver
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             val diffText = when {
@@ -918,17 +930,17 @@ fun ConverterResultCard(
                 text = "فاصله زمانی: $diffText",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = EmeraldSuccess
+                color = MaterialTheme.colorScheme.tertiary
             )
 
             if (occasions.isNotEmpty()) {
-                Divider(color = GlassBorder)
-                Text("مناسبت این روز:", fontSize = 12.sp, color = SoftPurple, fontWeight = FontWeight.Bold)
+                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text("مناسبت این روز:", fontSize = 12.sp, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
                 occasions.forEach { occ ->
                     Text(
                         text = "• ${occ.title}" + if (occ.isHoliday) " (تعطیل رسمی)" else "",
                         fontSize = 13.sp,
-                        color = if (occ.isHoliday) UrgentRed else IceWhite
+                        color = if (occ.isHoliday) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -971,13 +983,13 @@ fun WidgetsGalleryScreen() {
                 text = "ویجت‌های مینیمال و تخت (۲ بعدی)",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = IceWhite
+                color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "هر ۴ مدل ویجت ساعت و تقویم شمسی فعال هستند. با زدن دکمه «افزودن به صفحه اصلی»، ویجت مستقیماً روی هوم‌اسکرین گوشی قرار می‌گیرد.",
                 fontSize = 13.sp,
-                color = CoolSilver
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -992,17 +1004,17 @@ fun WidgetsGalleryScreen() {
                         .height(115.dp)
                         .clip(RoundedCornerShape(22.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
-                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(16.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(NeonViolet.copy(alpha = 0.25f))
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f))
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
-                        Text(yearStr, fontSize = 11.sp, color = IceWhite)
+                        Text(yearStr, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
 
                     Column(
@@ -1011,15 +1023,15 @@ fun WidgetsGalleryScreen() {
                             .padding(top = 12.dp),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Text(dayMonthStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = IceWhite)
-                        Text(weekdayStr, fontSize = 14.sp, color = SoftPurple)
+                        Text(dayMonthStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(weekdayStr, fontSize = 14.sp, color = MaterialTheme.colorScheme.tertiary)
                     }
 
                     Text(
                         text = clockStr,
                         fontSize = 38.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = IceWhite,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.align(Alignment.CenterEnd)
                     )
                 }
@@ -1037,18 +1049,18 @@ fun WidgetsGalleryScreen() {
                         .height(120.dp)
                         .clip(RoundedCornerShape(22.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
-                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
-                        Text(dayMonthStr, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = IceWhite)
-                        Text(weekdayStr, fontSize = 16.sp, color = CoolSilver)
+                        Text(dayMonthStr, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+                        Text(weekdayStr, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(yearStr, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF60A5FA))
-                        Text(clockStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                        Text(clockStr, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -1065,16 +1077,16 @@ fun WidgetsGalleryScreen() {
                             .size(165.dp)
                             .clip(RoundedCornerShape(22.dp))
                             .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
-                            .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                             .padding(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(weekdayStr, fontSize = 16.sp, color = CoolSilver)
+                        Text(weekdayStr, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(6.dp))
-                        Text("$dayMonthStr $yearStr", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                        Text("$dayMonthStr $yearStr", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.height(6.dp))
-                        Text(clockStr, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = SoftPurple)
+                        Text(clockStr, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.tertiary)
                     }
                 }
             }
@@ -1091,7 +1103,7 @@ fun WidgetsGalleryScreen() {
                         .height(68.dp)
                         .clip(RoundedCornerShape(22.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFF141C32), Color(0xFF24193D))))
-                        .border(1.dp, NeonViolet.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f), RoundedCornerShape(22.dp))
                         .padding(horizontal = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -1100,13 +1112,13 @@ fun WidgetsGalleryScreen() {
                         text = clockStr,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = IceWhite
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "$weekdayStr، $dayMonthStr $yearStr",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = CoolSilver
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -1127,10 +1139,10 @@ fun WidgetPreviewContainer(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(title, fontWeight = FontWeight.Bold, color = IceWhite, fontSize = 15.sp)
+                Text(title, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
                 Button(
                     onClick = onAddClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Icon(Icons.Default.AddToHomeScreen, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -1154,12 +1166,12 @@ fun GlassAnalogClock(calendar: Calendar) {
         val center = Offset(size.width / 2f, size.height / 2f)
 
         drawCircle(
-            color = RoyalAzure.copy(alpha = 0.25f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
             radius = radius,
             center = center
         )
         drawCircle(
-            color = NeonViolet,
+            color = MaterialTheme.colorScheme.secondary,
             radius = radius,
             center = center,
             style = Stroke(width = 4f)
@@ -1167,7 +1179,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val hourAngle = Math.toRadians(((hour + minute / 60.0) * 30.0) - 90.0)
         drawLine(
-            color = IceWhite,
+            color = MaterialTheme.colorScheme.onSurface,
             start = center,
             end = Offset(
                 center.x + (radius * 0.5f * cos(hourAngle)).toFloat(),
@@ -1179,7 +1191,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val minAngle = Math.toRadians((minute * 6.0) - 90.0)
         drawLine(
-            color = SoftPurple,
+            color = MaterialTheme.colorScheme.tertiary,
             start = center,
             end = Offset(
                 center.x + (radius * 0.72f * cos(minAngle)).toFloat(),
@@ -1191,7 +1203,7 @@ fun GlassAnalogClock(calendar: Calendar) {
 
         val secAngle = Math.toRadians((second * 6.0) - 90.0)
         drawLine(
-            color = RoyalAzure,
+            color = MaterialTheme.colorScheme.primary,
             start = center,
             end = Offset(
                 center.x + (radius * 0.85f * cos(secAngle)).toFloat(),
@@ -1220,7 +1232,7 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
                     text = "مدیریت بیدارباش هوشمند",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = IceWhite
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -1229,7 +1241,7 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "هنوز زنگ بیدارباشی ثبت نکرده‌اید. دکمه + پایین صفحه را لمس کنید.",
-                            color = CoolSilver,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp
                         )
                     }
@@ -1239,7 +1251,7 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
             items(alarms, key = { it.id }) { alarm ->
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    borderColor = if (alarm.isEnabled) NeonViolet.copy(alpha = 0.6f) else GlassBorder
+                    borderColor = if (alarm.isEnabled) MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outlineVariant
                 ) {
                     Column {
                         Row(
@@ -1252,12 +1264,12 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
                                     text = toPersianDigits("%02d:%02d".format(alarm.hour, alarm.minute)),
                                     fontSize = 34.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (alarm.isEnabled) IceWhite else CoolSilver
+                                    color = if (alarm.isEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = alarm.title,
                                     fontSize = 14.sp,
-                                    color = SoftPurple
+                                    color = MaterialTheme.colorScheme.tertiary
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1266,7 +1278,7 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
                                     onCheckedChange = { viewModel.toggleAlarm(alarm, it) }
                                 )
                                 IconButton(onClick = { viewModel.deleteAlarm(alarm) }) {
-                                    Icon(Icons.Default.DeleteOutline, contentDescription = "حذف", tint = CoolSilver)
+                                    Icon(Icons.Default.DeleteOutline, contentDescription = "حذف", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -1283,7 +1295,7 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
                         Text(
                             text = "تکرار: $daysText | ${if (alarm.isGradualVolume) "افزایش تدریجی صدا" else "صدای ثابت"} | ${if (alarm.isVibrate) "لرزش فعال" else "بدون لرزش"}",
                             fontSize = 12.sp,
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -1292,8 +1304,8 @@ fun AlarmsScreen(alarms: List<AlarmEntity>, viewModel: TimeMateViewModel) {
 
         FloatingActionButton(
             onClick = { showAddDialog = true },
-            containerColor = NeonViolet,
-            contentColor = IceWhite,
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 16.dp)
@@ -1327,8 +1339,8 @@ fun AddAlarmDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MidnightBlue,
-        title = { Text("تنظیم زنگ جدید", color = IceWhite, fontWeight = FontWeight.Bold) },
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = { Text("تنظیم زنگ جدید", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 // The time picker must always read hour (left) : minute (right),
@@ -1341,21 +1353,21 @@ fun AddAlarmDialog(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             IconButton(onClick = { hour = (hour + 1) % 24 }) {
-                                Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
+                                Icon(Icons.Default.KeyboardArrowUp, null, tint = MaterialTheme.colorScheme.onSurface)
                             }
-                            Text(toPersianDigits("%02d".format(hour)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                            Text(toPersianDigits("%02d".format(hour)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             IconButton(onClick = { hour = if (hour - 1 < 0) 23 else hour - 1 }) {
-                                Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
+                                Icon(Icons.Default.KeyboardArrowDown, null, tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
-                        Text(":", fontSize = 28.sp, color = NeonViolet, fontWeight = FontWeight.Bold)
+                        Text(":", fontSize = 28.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             IconButton(onClick = { minute = (minute + 1) % 60 }) {
-                                Icon(Icons.Default.KeyboardArrowUp, null, tint = IceWhite)
+                                Icon(Icons.Default.KeyboardArrowUp, null, tint = MaterialTheme.colorScheme.onSurface)
                             }
-                            Text(toPersianDigits("%02d".format(minute)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = IceWhite)
+                            Text(toPersianDigits("%02d".format(minute)), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             IconButton(onClick = { minute = if (minute - 1 < 0) 59 else minute - 1 }) {
-                                Icon(Icons.Default.KeyboardArrowDown, null, tint = IceWhite)
+                                Icon(Icons.Default.KeyboardArrowDown, null, tint = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }
@@ -1369,7 +1381,7 @@ fun AddAlarmDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("روزهای تکرار:", fontSize = 13.sp, color = CoolSilver)
+                Text("روزهای تکرار:", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -1380,38 +1392,38 @@ fun AddAlarmDialog(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(CircleShape)
-                                .background(if (isSelected) RoyalAzure else GlassSurface)
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable {
                                     if (isSelected) selectedDays.remove(idx) else selectedDays.add(idx)
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(label, color = IceWhite, fontSize = 12.sp)
+                            Text(label, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
                         }
                     }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = isGradual, onCheckedChange = { isGradual = it })
-                    Text("افزایش تدریجی صدای زنگ", color = IceWhite, fontSize = 13.sp)
+                    Text("افزایش تدریجی صدای زنگ", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = isVibrate, onCheckedChange = { isVibrate = it })
-                    Text("لرزش همزمان با زنگ", color = IceWhite, fontSize = 13.sp)
+                    Text("لرزش همزمان با زنگ", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                 }
             }
         },
         confirmButton = {
             Button(
                 onClick = { onSave(hour, minute, title, selectedDays.toList(), isVibrate, isGradual) },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("ذخیره زنگ", color = IceWhite)
+                Text("ذخیره زنگ", color = MaterialTheme.colorScheme.onSurface)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("انصراف", color = CoolSilver)
+                Text("انصراف", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )
@@ -1434,7 +1446,7 @@ fun RemindersScreen(reminders: List<ReminderEntity>, viewModel: TimeMateViewMode
                     text = "یادآورهای هوشمند و برنامه‌ها",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = IceWhite
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
 
@@ -1443,7 +1455,7 @@ fun RemindersScreen(reminders: List<ReminderEntity>, viewModel: TimeMateViewMode
                     GlassCard(modifier = Modifier.fillMaxWidth()) {
                         Text(
                             text = "یادآوری ثبت نشده است. با دکمه پایین صفحه یادآور جدید بسازید.",
-                            color = CoolSilver,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp
                         )
                     }
@@ -1461,8 +1473,8 @@ fun RemindersScreen(reminders: List<ReminderEntity>, viewModel: TimeMateViewMode
 
         FloatingActionButton(
             onClick = { showDialog = true },
-            containerColor = RoyalAzure,
-            contentColor = IceWhite,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 16.dp)
@@ -1490,9 +1502,9 @@ fun ReminderItemCard(
     onDelete: () -> Unit
 ) {
     val priorityColor = when (reminder.priority) {
-        1 -> UrgentRed
-        2 -> NeonViolet
-        else -> RoyalAzure
+        1 -> MaterialTheme.colorScheme.error
+        2 -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.primary
     }
     val priorityLabel = when (reminder.priority) {
         1 -> "فوری"
@@ -1522,21 +1534,21 @@ fun ReminderItemCard(
                         text = reminder.title,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (reminder.isCompleted) CoolSilver else IceWhite,
+                        color = if (reminder.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                         textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else TextDecoration.None
                     )
                     if (reminder.description.isNotBlank()) {
-                        Text(text = reminder.description, fontSize = 12.sp, color = CoolSilver)
+                        Text(text = reminder.description, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text(
                         text = "ساعت ${toPersianDigits("%02d:%02d".format(reminder.hour, reminder.minute))} | اولویت: $priorityLabel | ${toPersianDigits(reminder.persianDate)}",
                         fontSize = 11.sp,
-                        color = SoftPurple
+                        color = MaterialTheme.colorScheme.tertiary
                     )
                 }
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.DeleteOutline, contentDescription = "حذف", tint = CoolSilver)
+                Icon(Icons.Default.DeleteOutline, contentDescription = "حذف", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -1557,8 +1569,8 @@ fun AddReminderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MidnightBlue,
-        title = { Text("ثبت یادآور هوشمند", color = IceWhite, fontWeight = FontWeight.Bold) },
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = { Text("ثبت یادآور هوشمند", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -1580,15 +1592,15 @@ fun AddReminderDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("زمان یادآوری:", color = IceWhite, fontSize = 13.sp)
+                    Text("زمان یادآوری:", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { hour = (hour + 1) % 24 }) { Text("+ساعت") }
-                        Text(toPersianDigits("%02d:%02d".format(hour, minute)), color = NeonViolet, fontWeight = FontWeight.Bold)
+                        Text(toPersianDigits("%02d:%02d".format(hour, minute)), color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                         TextButton(onClick = { minute = (minute + 15) % 60 }) { Text("+دقیقه") }
                     }
                 }
 
-                Text("اولویت:", color = CoolSilver, fontSize = 12.sp)
+                Text("اولویت:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(1 to "فوری", 2 to "مهم", 3 to "عادی").forEach { (p, label) ->
                         FilterChip(
@@ -1601,7 +1613,7 @@ fun AddReminderDialog(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = autoRepeat, onCheckedChange = { autoRepeat = it })
-                    Text("تکرار خودکار در صورت انجام نشدن", color = IceWhite, fontSize = 12.sp)
+                    Text("تکرار خودکار در صورت انجام نشدن", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
                 }
             }
         },
@@ -1612,13 +1624,13 @@ fun AddReminderDialog(
                         onSave(title, desc, priority, repeatMode, hour, minute, autoRepeat)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("ثبت یادآور", color = IceWhite)
+                Text("ثبت یادآور", color = MaterialTheme.colorScheme.onSurface)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("انصراف", color = CoolSilver) }
+            TextButton(onClick = onDismiss) { Text("انصراف", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     )
 }
@@ -1627,7 +1639,7 @@ fun AddReminderDialog(
 // 5. SETTINGS & HOURLY CHIME + XIAOMI MIUI RELIABILITY GUARD
 // ==========================================
 @Composable
-fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit = {}) {
+fun SettingsScreen(\n    viewModel: TimeMateViewModel,\n    selectedTheme: AppTheme,\n    onThemeSelected: (AppTheme) -> Unit,\n    onOpenXiaomiGuide: () -> Unit = {}\n) {
     val context = LocalContext.current
     var isChimeEnabled by remember {
         mutableStateOf(HourlyChimeSynthesizer.isHourlyChimeEnabled(context))
@@ -1645,26 +1657,26 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                 text = "تنظیمات و پایداری سیستم",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = IceWhite
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
 
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                borderColor = NeonViolet
+                borderColor = MaterialTheme.colorScheme.secondary
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = "مدت زمان چرت زدن",
                         fontWeight = FontWeight.Bold,
-                        color = IceWhite,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp
                     )
                     Text(
                         text = "مدت تعویق زنگ برای همه بیدارباش‌ها",
                         fontSize = 12.sp,
-                        color = CoolSilver
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1688,7 +1700,7 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
         item {
             GlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                borderColor = RoyalAzure
+                borderColor = MaterialTheme.colorScheme.primary
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
@@ -1700,13 +1712,13 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                             Text(
                                 text = "زنگ کوتاه سر ساعت (دینگ‌دینگ)",
                                 fontWeight = FontWeight.Bold,
-                                color = IceWhite,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp
                             )
                             Text(
                                 text = "پخش خودکار زنگ دو جزئی رأس هر ساعت از ساعت ۷:۰۰ صبح تا ۲۳:۰۰ شب",
                                 fontSize = 12.sp,
-                                color = CoolSilver
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
@@ -1722,9 +1734,9 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                         onClick = { HourlyChimeSynthesizer.playDingDing() },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = SoftPurple)
+                        Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
                         Spacer(Modifier.width(8.dp))
-                        Text("پخش آزمایشی صدای دینگ‌دینگ", color = IceWhite)
+                        Text("پخش آزمایشی صدای دینگ‌دینگ", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -1734,24 +1746,24 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
             item {
                 GlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    borderColor = NeonViolet
+                    borderColor = MaterialTheme.colorScheme.secondary
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
                             text = "راهنمای پایداری زنگ در MIUI و HyperOS",
                             fontWeight = FontWeight.Bold,
-                            color = IceWhite,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp
                         )
                         Text(
                             text = "تنظیمات شروع خودکار، محدودیت باتری و مجوز زنگ دقیق را هر زمان خواستید دوباره بررسی کنید.",
                             fontSize = 13.sp,
-                            color = CoolSilver
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Button(
                             onClick = onOpenXiaomiGuide,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalAzure)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Default.Tune, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
@@ -1768,7 +1780,7 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                     Text(
                         text = "پشتیبان‌گیری آفلاین (JSON)",
                         fontWeight = FontWeight.Bold,
-                        color = IceWhite,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp
                     )
                     OutlinedButton(
@@ -1780,9 +1792,9 @@ fun SettingsScreen(viewModel: TimeMateViewModel, onOpenXiaomiGuide: () -> Unit =
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Backup, contentDescription = null, tint = IceWhite)
+                        Icon(Icons.Default.Backup, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                         Spacer(Modifier.width(8.dp))
-                        Text("کپی نسخه پشتیبان کامل (JSON)", color = IceWhite)
+                        Text("کپی نسخه پشتیبان کامل (JSON)", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
