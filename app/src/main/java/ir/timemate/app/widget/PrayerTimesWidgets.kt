@@ -10,6 +10,7 @@ import ir.timemate.app.R
 import ir.timemate.app.prayer.PrayerTimesActivity
 import ir.timemate.app.prayer.PrayerTimesSource
 import ir.timemate.app.prayer.PrayerCities
+import ir.timemate.app.util.PersianCalendarUtils
 abstract class BasePrayerTimesWidgetProvider(private val layoutId:Int):AppWidgetProvider(){
  override fun onUpdate(context:Context,manager:AppWidgetManager,ids:IntArray){ids.forEach{render(context,manager,it,layoutId)}}
  override fun onReceive(context:Context,intent:Intent){super.onReceive(context,intent);if(intent.action in listOf(Intent.ACTION_DATE_CHANGED,Intent.ACTION_TIME_CHANGED,Intent.ACTION_TIMEZONE_CHANGED)) updateAll(context)}
@@ -20,6 +21,7 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId:Int):AppWidget
    val cityId=prefs.getString("city_id","tehran")?:"tehran"
    val city=PrayerCities.provincialCapitals.firstOrNull{it.id==cityId}?:PrayerCities.provincialCapitals.first()
    views.setTextViewText(R.id.prayer_city,city.title)
+   views.setTextViewText(R.id.prayer_date,PersianCalendarUtils.today().formatFull())
    views.setTextViewText(R.id.prayer_status,"داده رسمی در دسترس نیست")
    views.setTextViewText(R.id.prayer_source,PrayerTimesSource.DISPLAY_NAME)
    views.setTextViewText(R.id.prayer_next,"پس از تأیید منبع رسمی نمایش داده می‌شود")
