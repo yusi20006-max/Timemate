@@ -2,106 +2,53 @@ package ir.timemate.app.prayer
 
 import android.content.Context
 import android.util.Log
-import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
-import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.text.PDFTextStripper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.jsoup.Jsoup
-import java.io.ByteArrayInputStream
-import java.time.LocalDate
-import java.time.ZoneId
+import java.io.InputStreamReader
+import java.util.zip.GZIPInputStream
 
+/**
+ * Reads the signed-off annual Tehran dataset shipped inside the APK.
+ * No network access, PDF download, scraping, or runtime PDF parsing is performed.
+ */
 class OfficialPrayerTimesRepository(context: Context) {
     private val appContext = context.applicationContext
-    private val cache = PrayerTimesCache(appContext)
 
-    suspend fun refreshYear(city: PrayerCity, force: Boolean = false): Boolean = withContext(Dispatchers.IO) {
-        val zone = runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran"))
-        val today = LocalDate.now(zone).toString()
-        val cachedToday = cache.get(city, today)
-        if (!force && cachedToday != null &&
-            System.currentTimeMillis() - cachedToday.fetchedAtMillis < CACHE_MAX_AGE_MS
-        ) {
-            return@withContext true
-        }
+    suspend fun ensureBundledYear(city: PrayerCity): Boolean =
+        withContext(Dispatchers.IO) { loadBundledYearBlocking(city) }
 
-        runCatching {
-            val pdfUrl = resolveOfficialPdfUrl(city)
-            val response = Jsoup.connect(pdfUrl)
-                .ignoreContentType(true)
-                .maxBodySize(MAX_PDF_BYTES)
-                .timeout(NETWORK_TIMEOUT_MS)
-                .execute()
-            val finalPdfUrl = response.url().toString()
-            val finalUri = java.net.URI(finalPdfUrl)
-            require(finalUri.scheme == "https" && finalUri.host == OFFICIAL_HOST &&
-                finalUri.path.contains(".pdf", ignoreCase = true)
-            ) { "مسیر نهایی دریافت PDF از دامنه رسمی دانشگاه خارج شده است." }
-            val bytes = response.bodyAsBytes()
-            require(bytes.size in 1..MAX_PDF_BYTES) { "فایل رسمی خالی یا بیش از حد بزرگ است." }
-            require(bytes.take(5).toByteArray().toString(Charsets.ISO_8859_1).startsWith("%PDF-")) {
-                "پاسخ دریافتی فایل PDF معتبر نیست."
-            }
+    fun loadBundledYearBlocking(city: PrayerCity): Boolean {
+        if (city.id != "tehran") return false
+        if (tehranDays != null) return true
 
-            PDFBoxResourceLoader.init(appContext)
-            val pageTexts = PDDocument.load(ByteArrayInputStream(bytes)).use { document ->
-                require(document.numberOfPages == 12) { "فایل رسمی باید دقیقاً ۱۲ صفحه ماهانه داشته باشد." }
-                (1..document.numberOfPages).map { page ->
-                    PDFTextStripper().apply {
-                        startPage = page
-                        endPage = page
-                        sortByPosition = true
-                    }.getText(document)
+        synchronized(loadLock) {
+            if (tehranDays != null) return true
+            return runCatching {
+                val json = GZIPInputStream(appContext.assets.open(ASSET_PATH)).use { stream ->
+                    InputStreamReader(stream, Charsets.UTF_8).use { it.readText() }
                 }
-            }
-            val days = OfficialPrayerTimesPdfParser.parsePages(pageTexts, city, finalPdfUrl)
-            require(days.size in 365..366) { "پوشش کامل سال ۱۴۰۵ از فایل رسمی استخراج نشد." }
-            require(cache.saveAll(days)) { "ذخیره داده رسمی در حافظه ناموفق بود." }
-            true
-        }.onFailure { error ->
-            Log.w(TAG, "Official prayer-times refresh failed for city=${city.id}", error)
-        }.getOrDefault(false)
-    }
-
-    fun cachedDay(city: PrayerCity, dateIso: String): CachedPrayerTimes? = cache.get(city, dateIso)
-
-    private fun resolveOfficialPdfUrl(city: PrayerCity): String {
-        val document = Jsoup.connect(PrayerTimesSource.OFFICIAL_PAGE)
-            .timeout(NETWORK_TIMEOUT_MS)
-            .get()
-        val wanted = normalize(city.title)
-        val link = document.select("a[href]").firstOrNull { anchor ->
-            val label = normalize(
-                listOf(anchor.text(), anchor.attr("title"), anchor.attr("aria-label"), anchor.parent()?.text().orEmpty())
-                    .joinToString(" ")
-            )
-            val href = anchor.absUrl("href")
-            label.contains(wanted) && href.contains(".pdf", ignoreCase = true)
-        } ?: error("پیوند رسمی PDF برای شهر ${city.title} در صفحه دانشگاه پیدا نشد.")
-        val url = link.absUrl("href")
-        val uri = java.net.URI(url)
-        require(uri.scheme == "https" && uri.host == OFFICIAL_HOST && uri.path.contains(".pdf", ignoreCase = true)) {
-            "پیوند شهر به فایل PDF رسمی دانشگاه تهران اشاره نمی‌کند."
+                val parsed = BundledPrayerTimesParser.parse(json, city)
+                require(parsed.size == 365) { "Bundled Tehran 1405 dataset failed validation." }
+                tehranDays = parsed.associateBy { it.dateIso }
+                true
+            }.onFailure { error ->
+                Log.e(TAG, "Unable to load bundled Tehran prayer times.", error)
+            }.getOrDefault(false)
         }
-        return url
     }
 
-    private fun normalize(value: String): String = value
-        .replace('ي', 'ی')
-        .replace('ك', 'ک')
-        .replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3')
-        .replace('۴', '4').replace('۵', '5').replace('۶', '6').replace('۷', '7')
-        .replace('۸', '8').replace('۹', '9')
-        .replace("\u200c", "")
-        .replace(Regex("\\s+"), "")
-        .trim()
+    fun day(city: PrayerCity, dateIso: String): PrayerTimesDay? {
+        if (city.id != "tehran") return null
+        if (tehranDays == null && !loadBundledYearBlocking(city)) return null
+        return tehranDays?.get(dateIso)
+    }
 
     companion object {
-        private const val TAG = "OfficialPrayerTimes"
-        private const val OFFICIAL_HOST = "calendar.ut.ac.ir"
-        private const val NETWORK_TIMEOUT_MS = 25_000
-        private const val MAX_PDF_BYTES = 8 * 1024 * 1024
-        private const val CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L
+        private const val TAG = "BundledPrayerTimes"
+        private const val ASSET_PATH = "prayer-times/tehran-1405.json.gz"
+        private val loadLock = Any()
+
+        @Volatile
+        private var tehranDays: Map<String, PrayerTimesDay>? = null
     }
 }
