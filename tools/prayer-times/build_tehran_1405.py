@@ -16,6 +16,7 @@ from pathlib import Path
 MONTH_DAYS = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29]
 EVENT_ORDER = ["fajr", "sunrise", "dhuhr", "sunset", "maghrib", "midnight"]
 START_DATE = "2026-03-21"
+EXPECTED_SOURCE_SHA256 = "2035e940740b28f5f2722274c64b1fff6bcf9892de77fcd3f662a027effa3540"
 TIME_RE = re.compile(r"(?<!\d)(\d{1,2}:\d{2})(?!\d)")
 
 
@@ -43,6 +44,10 @@ def main() -> None:
     page_match = re.search(r"^Pages:\s+(\d+)$", info, re.MULTILINE)
     if not page_match or int(page_match.group(1)) != 12:
         raise SystemExit("Official Tehran 1405 source must contain exactly 12 monthly pages.")
+
+    source_sha256 = hashlib.sha256(args.pdf.read_bytes()).hexdigest()
+    if source_sha256 != EXPECTED_SOURCE_SHA256:
+        raise SystemExit("The PDF fingerprint does not match the reviewed University of Tehran source.")
 
     days: list[str] = []
     for page, expected_count in enumerate(MONTH_DAYS, start=1):
@@ -90,7 +95,7 @@ def main() -> None:
             "publisher": "Geophysics Institute, University of Tehran",
             "document": "Tehran prayer times 1405",
             "filename": args.pdf.name,
-            "sha256": hashlib.sha256(args.pdf.read_bytes()).hexdigest(),
+            "sha256": source_sha256,
         },
         "days": days,
     }
