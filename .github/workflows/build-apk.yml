@@ -3,17 +3,23 @@ name: TimeMate CI and APK
 on:
   push:
     branches: [ "main", "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify-and-build:
     name: Unit tests, lint and APK builds
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -29,6 +35,22 @@ jobs:
         with:
           gradle-version: '8.6'
 
+      - name: Validate release signing secrets and prepare keystore
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::Required GitHub Actions secret is missing: ${name}"
+              exit 1
+            fi
+          done
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/timemate-upload.jks"
+          test -s "$RUNNER_TEMP/timemate-upload.jks"
+          chmod 600 "$RUNNER_TEMP/timemate-upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/timemate-upload.jks" >> "$GITHUB_ENV"
+
       - name: Validate bundled official Tehran dataset
         run: python3 tools/prayer-times/validate_tehran_asset.py
 
@@ -37,6 +59,18 @@ jobs:
 
       - name: Verify bundled Tehran asset inside both APKs
         run: python3 tools/prayer-times/validate_tehran_apk.py
+
+      - name: Verify signed release APK
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          cp "$APK" "TimeMate-${GITHUB_REF_NAME}.apk"
 
       - name: Upload Debug and Release APKs
         uses: actions/upload-artifact@v4
@@ -47,3 +81,19 @@ jobs:
             app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: TimeMate ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: TimeMate-${{ github.ref_name }}.apk
+          body: |
+            TimeMate Android release.
+
+            - Signed release APK.
+            - Official Tehran 1405 prayer times bundled for offline use.
+            - APK signature is verified in CI before publication.
