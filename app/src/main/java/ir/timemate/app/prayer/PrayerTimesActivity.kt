@@ -33,10 +33,7 @@ class PrayerTimesActivity : ComponentActivity() {
 @Composable
 fun PrayerTimesScreen() {
     val context = LocalContext.current
-    var cityId by remember {
-        mutableStateOf(context.getSharedPreferences("prayer_times", 0).getString("city_id", "tehran") ?: "tehran")
-    }
-    val city = PrayerCities.provincialCapitals.firstOrNull { it.id == cityId } ?: PrayerCities.provincialCapitals.first()
+    val city = PrayerCities.provincialCapitals.single()
     val zone = remember(city.timeZoneId) { runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran")) }
     val repository = remember(context) { OfficialPrayerTimesRepository(context) }
     var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
