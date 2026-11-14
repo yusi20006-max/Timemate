@@ -23,7 +23,7 @@ class BundledPrayerTimesParserTest {
                 "publisher": "Geophysics Institute, University of Tehran",
                 "document": "Tehran prayer times 1405",
                 "filename": "Tehran1405.pdf",
-                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "sha256": "2035e940740b28f5f2722274c64b1fff6bcf9892de77fcd3f662a027effa3540"
               },
               "days": [${rows.joinToString(",") { "\"$it\"" }}]
             }
