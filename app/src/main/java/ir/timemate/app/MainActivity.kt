@@ -109,7 +109,7 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     val deviceSetupFlow = remember(context) { DeviceSetupDataStore.observe(context) }
     // null means DataStore has not emitted its persisted value yet. Do not treat
     // that loading state as a first install, or the setup guide reopens on every launch.
-    val devicePreferences by deviceSetupFlow.collectAsState<DeviceSetupPreferences?>(initial = null)
+    val devicePreferences by deviceSetupFlow.collectAsState(initial = null as DeviceSetupPreferences?)
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
 
