@@ -34,10 +34,7 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
     companion object {
         private fun render(context: Context, manager: AppWidgetManager, id: Int, layout: Int) {
             val views = RemoteViews(context.packageName, layout)
-            val prefs = context.getSharedPreferences("prayer_times", Context.MODE_PRIVATE)
-            val cityId = prefs.getString("city_id", "tehran") ?: "tehran"
-            val city = PrayerCities.provincialCapitals.firstOrNull { it.id == cityId }
-                ?: PrayerCities.provincialCapitals.first()
+            val city = PrayerCities.provincialCapitals.single()
             val zone = runCatching { ZoneId.of(city.timeZoneId) }.getOrDefault(ZoneId.of("Asia/Tehran"))
             val now = ZonedDateTime.ofInstant(Instant.now(), zone)
             val today = now.toLocalDate()
