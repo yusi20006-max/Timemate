@@ -1,6 +1,7 @@
 package ir.timemate.app.prayer
 
 import android.content.Context
+import android.util.Log
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
@@ -35,7 +36,7 @@ class OfficialPrayerTimesRepository(context: Context) {
             val finalPdfUrl = response.url().toString()
             val finalUri = java.net.URI(finalPdfUrl)
             require(finalUri.scheme == "https" && finalUri.host == OFFICIAL_HOST &&
-                finalUri.path.contains("1405.pdf", ignoreCase = true)
+                finalUri.path.contains(".pdf", ignoreCase = true)
             ) { "مسیر نهایی دریافت PDF از دامنه رسمی دانشگاه خارج شده است." }
             val bytes = response.bodyAsBytes()
             require(bytes.size in 1..MAX_PDF_BYTES) { "فایل رسمی خالی یا بیش از حد بزرگ است." }
@@ -58,6 +59,8 @@ class OfficialPrayerTimesRepository(context: Context) {
             require(days.size in 365..366) { "پوشش کامل سال ۱۴۰۵ از فایل رسمی استخراج نشد." }
             require(cache.saveAll(days)) { "ذخیره داده رسمی در حافظه ناموفق بود." }
             true
+        }.onFailure { error ->
+            Log.w(TAG, "Official prayer-times refresh failed for city=${city.id}", error)
         }.getOrDefault(false)
     }
 
@@ -68,8 +71,14 @@ class OfficialPrayerTimesRepository(context: Context) {
             .timeout(NETWORK_TIMEOUT_MS)
             .get()
         val wanted = normalize(city.title)
-        val link = document.select("a[href]").firstOrNull { normalize(it.text()) == wanted }
-            ?: error("پیوند رسمی PDF برای شهر ${city.title} در صفحه دانشگاه پیدا نشد.")
+        val link = document.select("a[href]").firstOrNull { anchor ->
+            val label = normalize(
+                listOf(anchor.text(), anchor.attr("title"), anchor.attr("aria-label"), anchor.parent()?.text().orEmpty())
+                    .joinToString(" ")
+            )
+            val href = anchor.absUrl("href")
+            label.contains(wanted) && href.contains(".pdf", ignoreCase = true)
+        } ?: error("پیوند رسمی PDF برای شهر ${city.title} در صفحه دانشگاه پیدا نشد.")
         val url = link.absUrl("href")
         val uri = java.net.URI(url)
         require(uri.scheme == "https" && uri.host == OFFICIAL_HOST && uri.path.contains(".pdf", ignoreCase = true)) {
@@ -81,11 +90,15 @@ class OfficialPrayerTimesRepository(context: Context) {
     private fun normalize(value: String): String = value
         .replace('ي', 'ی')
         .replace('ك', 'ک')
+        .replace('۰', '0').replace('۱', '1').replace('۲', '2').replace('۳', '3')
+        .replace('۴', '4').replace('۵', '5').replace('۶', '6').replace('۷', '7')
+        .replace('۸', '8').replace('۹', '9')
         .replace("\u200c", "")
-        .replace(" ", "")
+        .replace(Regex("\\s+"), "")
         .trim()
 
     companion object {
+        private const val TAG = "OfficialPrayerTimes"
         private const val OFFICIAL_HOST = "calendar.ut.ac.ir"
         private const val NETWORK_TIMEOUT_MS = 25_000
         private const val MAX_PDF_BYTES = 8 * 1024 * 1024
