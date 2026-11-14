@@ -7,18 +7,7 @@ object PrayerTimesSource {
 }
 data class PrayerCity(val id:String,val title:String,val timeZoneId:String="Asia/Tehran")
 object PrayerCities {
- val provincialCapitals = listOf(
- PrayerCity("tehran","تهران"),PrayerCity("arak","اراک"),PrayerCity("ardabil","اردبیل"),
- PrayerCity("urmia","ارومیه"),PrayerCity("isfahan","اصفهان"),PrayerCity("ahvaz","اهواز"),
- PrayerCity("ilam","ایلام"),PrayerCity("bojnurd","بجنورد"),PrayerCity("bandar-abbas","بندرعباس"),
- PrayerCity("bushehr","بوشهر"),PrayerCity("birjand","بیرجند"),PrayerCity("tabriz","تبریز"),
- PrayerCity("shahr-e-kord","شهرکرد"),PrayerCity("rasht","رشت"),PrayerCity("zahedan","زاهدان"),
- PrayerCity("zanjan","زنجان"),PrayerCity("semnan","سمنان"),PrayerCity("sanandaj","سنندج"),
- PrayerCity("shiraz","شیراز"),PrayerCity("ghazvin","قزوین"),PrayerCity("qom","قم"),
- PrayerCity("kerman","کرمان"),PrayerCity("kermanshah","کرمانشاه"),PrayerCity("yasuj","یاسوج"),
- PrayerCity("gorgan","گرگان"),PrayerCity("mashhad","مشهد"),PrayerCity("hamedan","همدان"),
- PrayerCity("yazd","یزد"),PrayerCity("khorramabad","خرم‌آباد"),PrayerCity("sari","ساری"),PrayerCity("karaj","کرج")
- )
+ val provincialCapitals = listOf(PrayerCity("tehran", "تهران"))
 }
 sealed interface PrayerTimesState {
  data object Loading:PrayerTimesState
