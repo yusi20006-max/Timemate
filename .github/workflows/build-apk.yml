@@ -35,6 +35,9 @@ jobs:
       - name: Run unit tests, lint and build both variants
         run: gradle testDebugUnitTest lintDebug assembleDebug assembleRelease
 
+      - name: Verify bundled Tehran asset inside both APKs
+        run: python3 tools/prayer-times/validate_tehran_apk.py
+
       - name: Upload Debug and Release APKs
         uses: actions/upload-artifact@v4
         with:
