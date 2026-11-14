@@ -77,6 +77,10 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           cp "$APK" "TimeMate-${GITHUB_REF_NAME}.apk"
 
+      - name: Remove temporary signing keystore
+        if: always() && startsWith(github.ref, 'refs/tags/v')
+        run: rm -f "$RUNNER_TEMP/timemate-upload.jks"
+
       - name: Upload Debug and Release APKs
         uses: actions/upload-artifact@v4
         with:
