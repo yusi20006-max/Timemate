@@ -29,6 +29,9 @@ jobs:
         with:
           gradle-version: '8.6'
 
+      - name: Validate bundled official Tehran dataset
+        run: python3 tools/prayer-times/validate_tehran_asset.py
+
       - name: Run unit tests, lint and build both variants
         run: gradle testDebugUnitTest lintDebug assembleDebug assembleRelease
 
