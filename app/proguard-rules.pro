@@ -1,4 +1,5 @@
 -keepattributes *Annotation*
+-keepattributes Signature
 -keepclassmembers class * {
     @androidx.room.* <methods>;
 }
