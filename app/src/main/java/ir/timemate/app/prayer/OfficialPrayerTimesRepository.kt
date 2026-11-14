@@ -5,7 +5,6 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
-import java.util.zip.GZIPInputStream
 
 /**
  * Reads the signed-off annual Tehran dataset shipped inside the APK.
@@ -24,9 +23,10 @@ class OfficialPrayerTimesRepository(context: Context) {
         synchronized(loadLock) {
             if (tehranDays != null) return true
             return runCatching {
-                val json = GZIPInputStream(appContext.assets.open(ASSET_PATH)).use { stream ->
-                    InputStreamReader(stream, Charsets.UTF_8).use { it.readText() }
-                }
+                val json = InputStreamReader(
+                    appContext.assets.open(ASSET_PATH),
+                    Charsets.UTF_8
+                ).use { it.readText() }
                 val parsed = BundledPrayerTimesParser.parse(json, city)
                 require(parsed.size == 365) { "Bundled Tehran 1405 dataset failed validation." }
                 tehranDays = parsed.associateBy { it.dateIso }
@@ -44,7 +44,7 @@ class OfficialPrayerTimesRepository(context: Context) {
 
     companion object {
         private const val TAG = "BundledPrayerTimes"
-        private const val ASSET_PATH = "prayer-times/tehran-1405.json.gz"
+        private const val ASSET_PATH = "prayer-times/tehran-1405.json"
         private val loadLock = Any()
 
         @Volatile
