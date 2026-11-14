@@ -17,7 +17,7 @@ object OfficialPrayerTimesPdfParser {
     fun parsePages(pages: List<String>, city: PrayerCity, sourceUrl: String): List<PrayerTimesDay> {
         val uri = runCatching { URI(sourceUrl) }.getOrNull() ?: return emptyList()
         if (uri.scheme != "https" || uri.host != "calendar.ut.ac.ir" ||
-            !uri.path.contains("1405.pdf", ignoreCase = true) || pages.size != 12 ||
+            !uri.path.contains(".pdf", ignoreCase = true) || pages.size != 12 ||
             pages.none { normalize(it).contains("1405") }
         ) return emptyList()
 
