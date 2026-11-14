@@ -36,6 +36,9 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
 
+    if args.pdf.name != "Tehran1405.pdf":
+        raise SystemExit("Name the official source file Tehran1405.pdf before generating the asset.")
+
     info = run("pdfinfo", str(args.pdf))
     page_match = re.search(r"^Pages:\s+(\d+)$", info, re.MULTILINE)
     if not page_match or int(page_match.group(1)) != 12:
