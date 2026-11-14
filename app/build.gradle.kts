@@ -72,6 +72,8 @@ dependencies {
     // Coroutines & Gson for Backup/Converters
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.code.gson:gson:2.10.1")
+    implementation("org.jsoup:jsoup:1.18.3")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     testImplementation("junit:junit:4.13.2")
 }
