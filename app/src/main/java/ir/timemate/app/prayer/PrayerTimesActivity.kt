@@ -18,7 +18,6 @@ import ir.timemate.app.ui.theme.TimeMateTheme
 import ir.timemate.app.widget.*
 import ir.timemate.app.util.PersianCalendarUtils
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -94,7 +93,7 @@ fun PrayerTimesScreen() {
                     Text(refreshMessage, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (cached == null) {
                         Text("داده رسمی برای این شهر و تاریخ در دسترس نیست", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
-                        Text("در صورت نبود اینترنت یا فایل معتبر، هیچ زمان محاسباتی یا داده ثالث جایگزین نمی‌شود.")
+                        Text("داده این تاریخ در نسخه فعلی موجود نیست؛ این نسخه فقط سال ۱۴۰۵ تهران را پوشش می‌دهد.")
                     } else {
                         Text("داده رسمی آفلاین همراه برنامه", style = MaterialTheme.typography.titleMedium)
                         if (next != null) {
