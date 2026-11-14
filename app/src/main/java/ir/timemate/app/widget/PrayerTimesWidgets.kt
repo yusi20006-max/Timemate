@@ -49,12 +49,12 @@ abstract class BasePrayerTimesWidgetProvider(private val layoutId: Int) : AppWid
             if (cached == null) {
                 views.setTextViewText(R.id.prayer_status, "داده رسمی در دسترس نیست")
                 views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)
-                views.setTextViewText(R.id.prayer_next, "پس از دریافت داده معتبر نمایش داده می‌شود")
+                views.setTextViewText(R.id.prayer_next, "داده آفلاین برای این تاریخ موجود نیست")
             } else {
                 val tomorrow = repository.day(city, today.plusDays(1).toString())
-                val next = PrayerTimesEngine.nextPrayer(cached.day, tomorrow, now)
+                val next = PrayerTimesEngine.nextPrayer(cached, tomorrow, now)
                 if (next == null) {
-                    views.setTextViewText(R.id.prayer_status, "ذخیره‌شده • وقت بعدی نامشخص")
+                    views.setTextViewText(R.id.prayer_status, "داده آفلاین • وقت بعدی نامشخص")
                     views.setChronometer(R.id.prayer_next, SystemClock.elapsedRealtime(), "%s", false)
                     views.setTextViewText(R.id.prayer_next, "داده روز بعد موجود نیست")
                 } else {
