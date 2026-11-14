@@ -105,8 +105,11 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var showManufacturerPicker by remember { mutableStateOf(false) }
     var showDeviceGuide by remember { mutableStateOf(false) }
+    var isChangingManufacturer by remember { mutableStateOf(false) }
     val deviceSetupFlow = remember(context) { DeviceSetupDataStore.observe(context) }
-    val devicePreferences by deviceSetupFlow.collectAsState(initial = DeviceSetupPreferences())
+    // null means DataStore has not emitted its persisted value yet. Do not treat
+    // that loading state as a first install, or the setup guide reopens on every launch.
+    val devicePreferences by deviceSetupFlow.collectAsState<DeviceSetupPreferences?>(initial = null)
     val alarms by viewModel.alarms.collectAsState()
     val reminders by viewModel.reminders.collectAsState()
 
@@ -169,7 +172,7 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
                         onThemeSelected = { theme -> themeScope.launch { ThemeDataStore.setTheme(context, theme) } },
                         deviceManufacturer = devicePreferences?.manufacturer,
                         onOpenDeviceGuide = { showDeviceGuide = true },
-                        onChangeDeviceType = { showManufacturerPicker = true }
+                        onChangeDeviceType = { isChangingManufacturer = true; showManufacturerPicker = true }
                     )
                 }
             }
@@ -185,15 +188,22 @@ fun TimeMateMainApp(viewModel: TimeMateViewModel, selectedTheme: AppTheme) {
             onSelect = { manufacturer ->
                 themeScope.launch {
                     DeviceSetupDataStore.setManufacturer(context, manufacturer)
+                    isChangingManufacturer = false
                     showManufacturerPicker = false
                     showDeviceGuide = true
                 }
             },
             onDismiss = {
-                themeScope.launch {
-                    DeviceSetupDataStore.setManufacturer(context, DeviceSetupManufacturer.OTHER)
-                    DeviceSetupDataStore.markGuideCompleted(context)
-                    showManufacturerPicker = false
+                showManufacturerPicker = false
+                if (isChangingManufacturer) {
+                    // Cancelling a settings change must preserve the saved manufacturer.
+                    isChangingManufacturer = false
+                } else {
+                    // On first launch, "skip for now" completes setup with generic Android guidance.
+                    themeScope.launch {
+                        DeviceSetupDataStore.setManufacturer(context, DeviceSetupManufacturer.OTHER)
+                        DeviceSetupDataStore.markGuideCompleted(context)
+                    }
                 }
             }
         )

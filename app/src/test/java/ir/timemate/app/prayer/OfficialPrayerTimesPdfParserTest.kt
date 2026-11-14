@@ -60,4 +60,12 @@ class OfficialPrayerTimesPdfParserTest {
         pages[11] = pages[11].substringBeforeLast("23:30")
         assertTrue(OfficialPrayerTimesPdfParser.parsePages(pages, city, source).isEmpty())
     }
+
+    @Test fun acceptsOfficialPdfWhenYearIsInContentNotFilename() {
+        val nonstandardOfficialFilename = "https://calendar.ut.ac.ir/documents/prayers/tehran.pdf"
+        assertEquals(365, OfficialPrayerTimesPdfParser.parsePages(
+            completeYearPages(), city, nonstandardOfficialFilename
+        ).size)
+    }
+
 }
