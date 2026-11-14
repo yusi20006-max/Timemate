@@ -39,7 +39,6 @@ class OfficialPrayerTimesRepository(context: Context) {
 
     fun day(city: PrayerCity, dateIso: String): PrayerTimesDay? {
         if (city.id != "tehran") return null
-        if (tehranDays == null && !loadBundledYearBlocking(city)) return null
         return tehranDays?.get(dateIso)
     }
 
