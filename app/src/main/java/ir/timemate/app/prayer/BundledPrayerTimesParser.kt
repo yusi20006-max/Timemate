@@ -27,6 +27,7 @@ private data class BundledPrayerTimesSource(
  * Each day stores six minute-of-day integers in the declared eventOrder.
  */
 object BundledPrayerTimesParser {
+    private const val EXPECTED_SOURCE_SHA256 = "2035e940740b28f5f2722274c64b1fff6bcf9892de77fcd3f662a027effa3540"
     private val expectedEvents = listOf("fajr", "sunrise", "dhuhr", "sunset", "maghrib", "midnight")
 
     fun parse(json: String, city: PrayerCity): List<PrayerTimesDay> {
@@ -42,8 +43,10 @@ object BundledPrayerTimesParser {
             asset.startDate != "2026-03-21" ||
             asset.eventOrder != expectedEvents ||
             asset.days.size != 365 ||
+            asset.source.publisher != "Geophysics Institute, University of Tehran" ||
+            asset.source.document != "Tehran prayer times 1405" ||
             asset.source.filename != "Tehran1405.pdf" ||
-            !asset.source.sha256.matches(Regex("[0-9a-f]{64}"))
+            asset.source.sha256 != EXPECTED_SOURCE_SHA256
         ) return emptyList()
 
         val start = runCatching { LocalDate.parse(asset.startDate) }.getOrNull() ?: return emptyList()
