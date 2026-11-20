@@ -4,6 +4,14 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val releaseSigningEnv = listOf(
+    "ANDROID_KEYSTORE_PATH",
+    "ANDROID_KEYSTORE_PASSWORD",
+    "ANDROID_KEY_ALIAS",
+    "ANDROID_KEY_PASSWORD"
+).associateWith { System.getenv(it) }
+val releaseSigningConfigured = releaseSigningEnv.values.all { !it.isNullOrBlank() }
+
 android {
     namespace = "ir.timemate.app"
     compileSdk = 34
@@ -20,8 +28,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = file(releaseSigningEnv.getValue("ANDROID_KEYSTORE_PATH")!!)
+                storePassword = releaseSigningEnv.getValue("ANDROID_KEYSTORE_PASSWORD")!!
+                keyAlias = releaseSigningEnv.getValue("ANDROID_KEY_ALIAS")!!
+                keyPassword = releaseSigningEnv.getValue("ANDROID_KEY_PASSWORD")!!
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

@@ -7,10 +7,8 @@ import zipfile
 from pathlib import Path
 
 ASSET_PATH = "assets/prayer-times/tehran-1405.json"
-APK_PATHS = [
-    Path("app/build/outputs/apk/debug/app-debug.apk"),
-    Path("app/build/outputs/apk/release/app-release-unsigned.apk"),
-]
+DEBUG_APK = Path("app/build/outputs/apk/debug/app-debug.apk")
+RELEASE_APK_DIR = Path("app/build/outputs/apk/release")
 EXPECTED_SOURCE_SHA256 = "2035e940740b28f5f2722274c64b1fff6bcf9892de77fcd3f662a027effa3540"
 
 
@@ -36,10 +34,15 @@ def validate(apk: Path) -> None:
 
 
 def main() -> None:
-    for apk in APK_PATHS:
-        if not apk.is_file():
-            raise SystemExit(f"APK not found: {apk}")
-        validate(apk)
+    if not DEBUG_APK.is_file():
+        raise SystemExit(f"APK not found: {DEBUG_APK}")
+    release_apks = sorted(RELEASE_APK_DIR.glob("app-release*.apk"))
+    if len(release_apks) != 1:
+        raise SystemExit(
+            f"Expected exactly one release APK in {RELEASE_APK_DIR}, found: {release_apks}"
+        )
+    validate(DEBUG_APK)
+    validate(release_apks[0])
 
 
 if __name__ == "__main__":
